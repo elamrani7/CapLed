@@ -1,0 +1,6 @@
+@CapLed.API_HostAddress = http://localhost:5115
+
+GET {{CapLed.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

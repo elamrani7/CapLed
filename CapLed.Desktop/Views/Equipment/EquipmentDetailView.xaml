@@ -1,0 +1,151 @@
+<UserControl x:Class="CapLed.Desktop.Views.Equipment.EquipmentDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:CapLed.Desktop.Views.Equipment"
+             xmlns:viewmodels="clr-namespace:CapLed.Desktop.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=viewmodels:EquipmentDetailViewModel}"
+             Background="#F5F7F9">
+
+    <Grid Margin="30">
+        <Grid.MaxWidth>800</Grid.MaxWidth>
+        <Grid.HorizontalAlignment>Left</Grid.HorizontalAlignment>
+        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Header -->
+            <RowDefinition Height="*"/>    <!-- Form Scrollable -->
+            <RowDefinition Height="Auto"/> <!-- Footer Buttons -->
+        </Grid.RowDefinitions>
+
+        <!-- 1. Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,25">
+            <TextBlock Text="{Binding Title}" FontSize="28" FontWeight="Bold" Foreground="#1A2436"/>
+            
+            <!-- Error Message -->
+            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" 
+                    CornerRadius="4" Padding="12" Margin="0,15,0,0"
+                    Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#B91C1C" FontWeight="Medium"/>
+            </Border>
+
+            <!-- Success Message -->
+            <Border Background="#DCFCE7" BorderBrush="#22C55E" BorderThickness="1" 
+                    CornerRadius="4" Padding="12" Margin="0,15,0,0"
+                    Visibility="{Binding SuccessMessage, Converter={StaticResource StringToVisibility}}">
+                <TextBlock Text="{Binding SuccessMessage}" Foreground="#15803D" FontWeight="Medium"/>
+            </Border>
+        </StackPanel>
+
+        <!-- 2. Form Area -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,20">
+            <StackPanel>
+                
+                <!-- Identification Section -->
+                <Border Background="White" CornerRadius="8" Padding="20" Margin="0,0,0,15">
+                    <StackPanel>
+                        <TextBlock Text="IDENTIFICATION" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,15"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Nom de l'équipement *" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Height="36" Padding="8,0" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Référence / SKU *" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                                <TextBox Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged}" Height="36" Padding="8,0" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Configuration Section -->
+                <Border Background="White" CornerRadius="8" Padding="20" Margin="0,0,0,15">
+                    <StackPanel>
+                        <TextBlock Text="CONFIGURATION &amp; ÉTAT" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,15"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Category -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Catégorie *" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                                <ComboBox ItemsSource="{Binding Categories}" 
+                                          SelectedItem="{Binding SelectedCategory}"
+                                          DisplayMemberPath="Label"
+                                          Height="36"/>
+                            </StackPanel>
+
+                            <!-- Condition -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="État actuel *" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                                <ComboBox ItemsSource="{Binding ConditionOptions}"
+                                          SelectedItem="{Binding SelectedCondition}"
+                                          Height="36">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource EnumToString}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Margin="0,15,0,0">
+                            <TextBlock Text="Description technique" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                            <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" 
+                                     Height="100" TextWrapping="Wrap" AcceptsReturn="True" Padding="8" VerticalContentAlignment="Top"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stock Section -->
+                <Border Background="White" CornerRadius="8" Padding="20">
+                    <StackPanel>
+                        <TextBlock Text="STOCK" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,15"/>
+                        
+                        <StackPanel Width="150" HorizontalAlignment="Left">
+                            <TextBlock Text="Quantité initiale *" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                            <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Height="36" Padding="8,0" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 3. Footer Buttons -->
+        <Border Grid.Row="2" Padding="0,20,0,0" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0">
+            <DockPanel>
+                <Button Content="Annuler" Command="{Binding CancelCommand}" 
+                        Background="Transparent" BorderBrush="#CBD5E1" Foreground="#475569"
+                        Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Width="120"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Saving state -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0"
+                                Visibility="{Binding IsSaving, Converter={StaticResource BoolToVis}}">
+                        <ProgressBar IsIndeterminate="True" Width="80" Height="4" VerticalAlignment="Center"/>
+                        <TextBlock Text="Enregistrement..." Margin="8,0,0,0" Foreground="#64748B" FontSize="12"/>
+                    </StackPanel>
+
+                    <Button Content="Enregistrer l'équipement" Command="{Binding SaveCommand}" 
+                            Style="{StaticResource ActionButton}" 
+                            Background="#1A2436" Width="220"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

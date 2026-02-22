@@ -1,0 +1,24 @@
+# .gitignore for .NET
+[Bb]in/
+[Oo]bj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Database files
+*.mdf
+*.ldf
+*.db
+*.sqlite
+
+# User-specific files
+.idea/
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.log

@@ -1,0 +1,14 @@
+<UserControl x:Class="CapLed.Desktop.Views.Users.UserView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F0F2F5">
+    <Grid Margin="28">
+        <StackPanel>
+            <TextBlock Text="Utilisateurs"
+                       FontSize="24" FontWeight="Bold"
+                       Foreground="#1A2436" FontFamily="Segoe UI" Margin="0,0,0,8"/>
+            <TextBlock Text="Gestion des utilisateurs — À implémenter"
+                       Foreground="#78909C" FontSize="14" FontFamily="Segoe UI"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

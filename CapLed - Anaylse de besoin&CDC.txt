@@ -1,0 +1,324 @@
+🥇 ÉTAPE 1 — ANALYSE DU BESOIN
+
+(selon la démarche MOA : cadrage + analyse fonctionnelle)
+
+1️⃣ Contexte du projet (selon le cours – cadrage initial)
+
+L’entreprise dispose d’un stock physique de matériel industriel entreposé dans un dépôt.
+La gestion actuelle du stock repose sur des méthodes peu informatisées, ce qui limite :
+
+la visibilité en temps réel du matériel disponible,
+
+la fiabilité des informations sur les entrées et sorties,
+
+la valorisation commerciale du stock existant.
+
+Par ailleurs, l’entreprise souhaite disposer d’un site web de présentation du matériel, permettant aux clients de consulter les équipements disponibles, leurs photos et caractéristiques, sans fonctionnalité de vente en ligne.
+
+2️⃣ Problématique (issue de l’analyse du besoin)
+
+L’absence d’un système centralisé et synchronisé engendre :
+
+un décalage entre le stock réel et le stock affiché,
+
+des risques d’erreurs de disponibilité,
+
+une perte de temps dans la gestion quotidienne,
+
+une opportunité commerciale mal exploitée.
+
+👉 Problématique centrale (MOA)
+
+Comment mettre en place un système informatique fiable permettant de gérer le stock de matériel industriel tout en assurant une valorisation en ligne cohérente et synchronisée avec le stock réel ?
+
+3️⃣ Objectifs du projet (formulation MOA)
+🎯 Objectif général
+
+Mettre en œuvre une solution applicative intégrée permettant :
+
+la gestion opérationnelle du stock industriel
+
+la présentation en ligne du matériel disponible, synchronisée avec le stock réel.
+
+🎯 Objectifs spécifiques
+
+Centraliser les données des équipements
+
+Assurer le suivi des entrées et sorties de stock
+
+Garantir la cohérence entre le stock physique et le site web
+
+Faciliter la consultation du matériel par les clients
+
+Disposer d’une solution évolutive et pérenne
+
+4️⃣ Acteurs du projet (selon le cours MOA / MOE)
+👤 Maîtrise d’Ouvrage (MOA)
+
+Responsable du dépôt / entreprise
+
+Définit le besoin
+
+Valide les fonctionnalités
+
+Utilise le système de gestion de stock
+
+👤 Utilisateurs
+
+Personnel du dépôt (gestion des entrées/sorties)
+
+Clients (consultation uniquement)
+
+👤 Maîtrise d’Œuvre (MOE)
+
+Développeur (stagiaire)
+
+Conçoit et développe la solution
+
+Met en œuvre l’architecture technique
+
+5️⃣ Périmètre fonctionnel du projet
+✅ Inclus dans le périmètre
+
+Gestion des équipements industriels
+
+Gestion des entrées et sorties de stock
+
+Mise à jour automatique du stock
+
+Affichage du matériel disponible sur le site web
+
+Consultation des fiches équipements (photos, caractéristiques)
+
+❌ Hors périmètre
+
+Vente en ligne
+
+Paiement
+
+Livraison
+
+Facturation
+
+Gestion comptable
+
+(Conformément au cours : périmètre clairement délimité)
+
+6️⃣ Contraintes identifiées
+🔒 Contraintes fonctionnelles
+
+Les données du site web doivent refléter le stock réel
+
+Toute sortie de stock doit être automatiquement répercutée
+
+Accès sécurisé au back-office
+
+⚙️ Contraintes techniques
+
+Architecture modulaire
+
+Communication via API
+
+Séparation front-office / back-office
+
+Solution évolutive
+
+📘 CAHIER DES CHARGES FONCTIONNEL
+
+(rédigé selon le plan du cours fourni)
+
+1. Objet du cahier des charges
+
+Le présent cahier des charges a pour objectif de définir les exigences fonctionnelles et non fonctionnelles relatives à la conception et au développement d’une plateforme applicative de gestion et de valorisation de stock industriel.
+
+2. Présentation du projet
+
+Le projet consiste à développer :
+
+un logiciel de gestion de stock (back-office)
+
+une plateforme web de consultation du matériel disponible (front-office)
+
+Les deux systèmes seront interconnectés via des API, garantissant la cohérence des données.
+
+3. Exigences fonctionnelles
+3.1 Gestion du stock (back-office)
+
+Le système doit permettre :
+
+l’ajout d’un équipement industriel
+
+la modification des informations d’un équipement
+
+la suppression d’un équipement
+
+la gestion des entrées de stock
+
+la gestion des sorties de stock
+
+la consultation de l’état du stock en temps réel
+
+la recherche et le filtrage des équipements
+
+3.2 Gestion des équipements
+
+Chaque équipement doit être décrit par :
+
+un nom
+
+une catégorie
+
+une référence
+
+une description technique
+
+un état (neuf / occasion)
+
+une quantité disponible
+
+des photos associées
+
+3.3 Plateforme web (front-office)
+
+Le site web doit permettre :
+
+l’affichage du matériel disponible
+
+la consultation des fiches détaillées
+
+la visualisation des photos
+
+le filtrage par catégorie ou caractéristiques
+
+⚠️ Aucune fonctionnalité de vente n’est requise.
+
+4. Exigences non fonctionnelles
+
+Interface ergonomique et intuitive
+
+Temps de réponse acceptable
+
+Sécurité des accès au back-office
+
+Fiabilité des données
+
+Disponibilité du système
+
+5. Environnement technique (niveau MOA)
+
+Application web
+
+Base de données centralisée
+
+Communication via API REST
+
+Architecture modulaire et évolutive
+
+6. Organisation et gouvernance
+
+Validation fonctionnelle assurée par la MOA
+
+Développement et implémentation assurés par la MOE
+
+Réunions de suivi régulières
+
+Validation progressive des livrables
+
+7. Livrables attendus
+
+Note de cadrage validée
+
+Cahier des charges fonctionnel
+
+Diagrammes UML
+
+Modèle de données
+
+Application fonctionnelle
+
+Documentation utilisateur
+
+DATABASE ///////////////////////////////////
+
+-- Create Database
+CREATE DATABASE IF NOT EXISTS capled_stock;
+USE capled_stock;
+
+-- 1. Categories Table
+CREATE TABLE Categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    label VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    COMMENT 'Groups for industrial equipment classification'
+) ENGINE=InnoDB;
+
+-- 2. Equipments Table
+CREATE TABLE Equipments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    reference VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    `condition` ENUM('NEW', 'USED') NOT NULL DEFAULT 'NEW',
+    quantity INT NOT NULL DEFAULT 0,
+    min_threshold INT NOT NULL DEFAULT 5,
+    is_published BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES Categories(id) ON DELETE RESTRICT,
+    COMMENT 'Central hardware asset registry'
+) ENGINE=InnoDB;
+
+-- 3. Photos Table
+CREATE TABLE Photos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    equipment_id INT NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (equipment_id) REFERENCES Equipments(id) ON DELETE CASCADE,
+    COMMENT 'Image links for the equipment gallery'
+) ENGINE=InnoDB;
+
+-- 4. Users Table
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('ADMIN', 'STOCK_MANAGER') NOT NULL DEFAULT 'STOCK_MANAGER',
+    COMMENT 'Personnel accounts for the WPF back-office'
+) ENGINE=InnoDB;
+
+-- 5. StockMovements Table
+CREATE TABLE StockMovements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    equipment_id INT NOT NULL,
+    user_id INT NOT NULL,
+    `type` ENUM('ENTRY', 'EXIT') NOT NULL,
+    quantity INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    remarks TEXT,
+    FOREIGN KEY (equipment_id) REFERENCES Equipments(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE RESTRICT,
+    COMMENT 'Audit trail for all stock changes'
+) ENGINE=InnoDB;
+
+-- 6. ContactRequests Table
+CREATE TABLE ContactRequests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    equipment_id INT,
+    sender_name VARCHAR(100) NOT NULL,
+    sender_email VARCHAR(150) NOT NULL,
+    message TEXT NOT NULL,
+    status ENUM('NEW', 'OPEN', 'CLOSED') DEFAULT 'NEW',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (equipment_id) REFERENCES Equipments(id) ON DELETE SET NULL,
+    COMMENT 'Frontend inquiries regarding items'
+) ENGINE=InnoDB;
+
+
+
+
+///////////////////////////////////////////////////////////////////////////:
+
+
+Diagram de cas d'utilisation via PlantUml
