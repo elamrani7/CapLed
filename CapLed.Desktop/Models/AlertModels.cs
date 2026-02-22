@@ -1,8 +1,7 @@
+using System;
+
 namespace CapLed.Desktop.Models;
 
-/// <summary>
-/// Mirrors AlertReadDto — displayed in the low-stock alerts panel.
-/// </summary>
 public class AlertModel
 {
     public int Id { get; set; }
@@ -12,4 +11,13 @@ public class AlertModel
     public int Threshold { get; set; }
     public DateTime CreatedAt { get; set; }
     public string Status { get; set; } = "Active";
+
+    // UI Helper Properties
+    public bool IsCritical => CurrentQuantity < (Threshold / 2.0);
+    public bool IsWarning => !IsCritical && CurrentQuantity <= Threshold;
+}
+
+public class AlertUpdateModel
+{
+    public string Status { get; set; } = string.Empty;
 }

@@ -1,17 +1,14 @@
+using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 using CapLed.Desktop.Services;
 using CapLed.Desktop.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
-using System.Windows;
+using System.Net.Http;
 
 namespace CapLed.Desktop;
 
 public partial class App : Application
 {
-    // ─── Service Provider ────────────────────────────────────────────────────
-    public static IServiceProvider Services { get; private set; } = null!;
-
-    // ─── API base address — change this to match your running API ────────────
-    private const string ApiBaseAddress = "http://localhost:5115/";
+    public static ServiceProvider ServiceProvider { get; private set; } = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -19,37 +16,43 @@ public partial class App : Application
 
         var services = new ServiceCollection();
         ConfigureServices(services);
-        Services = services.BuildServiceProvider();
+        ServiceProvider = services.BuildServiceProvider();
 
-        // Resolve and display MainWindow
-        var mainWindow = new MainWindow
-        {
-            DataContext = Services.GetRequiredService<MainViewModel>()
-        };
+        var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
         mainWindow.Show();
     }
 
-    private static void ConfigureServices(IServiceCollection services)
+    private void ConfigureServices(IServiceCollection services)
     {
-        // ── HttpClient ────────────────────────────────────────────────────────
-        // All API services share one HttpClient configured with the base address.
-        services.AddHttpClient<EquipmentService>(c => c.BaseAddress = new Uri(ApiBaseAddress));
-        services.AddHttpClient<CategoryService> (c => c.BaseAddress = new Uri(ApiBaseAddress));
-        services.AddHttpClient<StockService>    (c => c.BaseAddress = new Uri(ApiBaseAddress));
-        services.AddHttpClient<AlertService>    (c => c.BaseAddress = new Uri(ApiBaseAddress));
-        services.AddHttpClient<UserService>     (c => c.BaseAddress = new Uri(ApiBaseAddress));
+        // ── Services ────────────────────────────────────────────────────
+        services.AddSingleton(new HttpClient { BaseAddress = new Uri("http://localhost:5115/") });
+        
+        services.AddSingleton<EquipmentService>();
+        services.AddSingleton<CategoryService>();
+        services.AddSingleton<StockService>();
+        services.AddSingleton<AlertService>();
+        services.AddSingleton<UserService>();
+        services.AddSingleton<AuthService>();
 
-        // ── ViewModels ────────────────────────────────────────────────────────
-        // Child ViewModels are Transient (new instance each navigation if desired)
+        // ── ViewModels ──────────────────────────────────────────────────
+        services.AddSingleton<MainViewModel>();
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<EquipmentListViewModel>();
         services.AddTransient<EquipmentDetailViewModel>();
-        services.AddTransient<CategoryViewModel>();
         services.AddTransient<StockMovementViewModel>();
+        services.AddTransient<CategoryViewModel>();
         services.AddTransient<AlertsViewModel>();
         services.AddTransient<UserViewModel>();
+        services.AddTransient<LoginViewModel>();
 
-        // MainViewModel is Singleton so the shell persists
-        services.AddSingleton<MainViewModel>();
+        // Factory to solve circular dependency
+        services.AddSingleton<Func<MainViewModel, LoginViewModel>>(provider => 
+            (mainVm) => new LoginViewModel(provider.GetRequiredService<AuthService>(), mainVm));
+
+        // ── Views ───────────────────────────────────────────────────────
+        services.AddSingleton<MainWindow>(provider => new MainWindow
+        {
+            DataContext = provider.GetRequiredService<MainViewModel>()
+        });
     }
 }

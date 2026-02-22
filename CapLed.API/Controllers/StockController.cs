@@ -5,10 +5,13 @@ using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Application.Interfaces.Services;
 using StockManager.Core.Domain.Enums;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace StockManager.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class StockController : ControllerBase
 {
     private readonly IStockService _stockService;

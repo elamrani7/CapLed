@@ -4,10 +4,13 @@ using StockManager.Core.Application.DTOs;
 using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Domain.Entities;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace StockManager.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize(Roles = "ADMIN")]
 public class UsersController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
@@ -39,7 +42,11 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserReadDto>> Create(UserCreateDto createDto)
     {
         var entity = _mapper.Map<User>(createDto);
-        // Password hashing would go here in a real app
+        
+        // Hash password before saving
+        var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
+        entity.PasswordHash = passwordHasher.HashPassword(entity, createDto.Password);
+        
         await _userRepository.AddAsync(entity);
 
         var readDto = _mapper.Map<UserReadDto>(entity);
@@ -55,6 +62,16 @@ public class UsersController : ControllerBase
         _mapper.Map(updateDto, existing);
         await _userRepository.UpdateAsync(existing);
         
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var existing = await _userRepository.GetByIdAsync(id);
+        if (existing == null) return NotFound();
+
+        await _userRepository.DeleteAsync(id);
         return NoContent();
     }
 }

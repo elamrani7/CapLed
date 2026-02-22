@@ -11,10 +11,13 @@ public class AppSession
 
     private AppSession() { }
 
-    public int UserId { get; set; } = 1;                  // Hardcoded until auth is implemented
-    public string UserName { get; set; } = "Admin";
+    public int UserId { get; set; }
+    public string UserName { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
-    public string Role { get; set; } = "ADMIN";            // "ADMIN" or "STOCK_MANAGER"
+    public string Role { get; set; } = string.Empty;
+    public string? JwtToken { get; set; }
+    public bool IsAuthenticated => !string.IsNullOrEmpty(JwtToken);
 
     public bool IsAdmin => Role == "ADMIN";
 
@@ -23,7 +26,9 @@ public class AppSession
     {
         UserId = 0;
         UserName = string.Empty;
+        FullName = string.Empty;
         Email = string.Empty;
         Role = string.Empty;
+        JwtToken = null;
     }
 }

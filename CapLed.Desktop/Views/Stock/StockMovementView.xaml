@@ -64,9 +64,9 @@
 
             <!-- Filters -->
             <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="15" Margin="0,0,0,15">
-                <StackPanel Orientation="Horizontal">
+                <WrapPanel Orientation="Horizontal">
                     <!-- Equipment Filter -->
-                    <StackPanel Margin="0,0,15,0">
+                    <StackPanel Margin="0,0,15,5">
                         <TextBlock Text="Équipement" FontSize="11" FontWeight="Bold" Foreground="#94A3B8" Margin="0,0,0,5"/>
                         <ComboBox ItemsSource="{Binding EquipmentChoices}" 
                                   SelectedItem="{Binding SelectedFilterEquipment}"
@@ -97,11 +97,11 @@
                     </StackPanel>
 
                     <!-- Filter Actions -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,2">
-                        <Button Content="Appliquer" Command="{Binding RefreshCommand}" Style="{StaticResource ActionButton}" Height="32" Width="90" Background="#334155" Margin="0,0,8,0"/>
-                        <Button Content="Reset" Command="{Binding ClearFiltersCommand}" Style="{StaticResource ActionButton}" Height="32" Width="70" Background="Transparent" Foreground="#64748B" BorderBrush="#E2E8F0"/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,7">
+                        <Button Content="Appliquer" Command="{Binding RefreshCommand}" Style="{StaticResource ActionButton}" Height="32" Width="110" Background="#334155" Margin="0,0,8,0"/>
+                        <Button Content="Reset" Command="{Binding ClearFiltersCommand}" Style="{StaticResource ActionButton}" Height="32" Width="80" Background="Transparent" Foreground="#64748B" BorderBrush="#E2E8F0"/>
                     </StackPanel>
-                </StackPanel>
+                </WrapPanel>
             </Border>
 
             <!-- History Grid -->

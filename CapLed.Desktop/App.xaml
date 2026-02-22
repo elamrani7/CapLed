@@ -14,6 +14,7 @@
             <conv:StringToVisibilityConverter x:Key="StringToVisibility"/>
             <conv:ConditionToBrushConverter x:Key="ConditionToBrush"/>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
+            <conv:InverseNullToBoolConverter x:Key="InverseNullToBool"/>
 
             <!-- ─── Styling Tokens ──────────── -->
             

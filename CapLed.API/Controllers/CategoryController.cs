@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using StockManager.Core.Application.DTOs;
 using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StockManager.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class CategoryController : ControllerBase
 {
     private readonly ICategoryRepository _categoryRepository;

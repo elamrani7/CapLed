@@ -10,6 +10,7 @@
         xmlns:stock="clr-namespace:CapLed.Desktop.Views.Stock"
         xmlns:alerts="clr-namespace:CapLed.Desktop.Views.Alerts"
         xmlns:users="clr-namespace:CapLed.Desktop.Views.Users"
+        xmlns:login="clr-namespace:CapLed.Desktop.Views.Login"
         Title="CapLed — Gestion de Stock"
         MinWidth="1100" MinHeight="680"
         Width="1280" Height="780"
@@ -17,7 +18,6 @@
         Background="#F0F2F5">
 
     <Window.Resources>
-        <conv:BoolToVisibilityConverter   x:Key="BoolToVisibility"/>
         <conv:EnumToStringConverter       x:Key="EnumToString"/>
         <conv:StringEqualityConverter     x:Key="StringEquality"/>
 
@@ -40,8 +40,13 @@
         <DataTemplate DataType="{x:Type vm:AlertsViewModel}">
             <alerts:AlertsView/>
         </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:UserViewModel}">
             <users:UserView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+            <login:LoginView/>
         </DataTemplate>
 
         <!-- ── Nav Button Style ─────────────────────────────────────────── -->
@@ -84,13 +89,24 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>   <!-- Sidebar -->
+            <ColumnDefinition Width="220">
+                <ColumnDefinition.Style>
+                    <Style TargetType="ColumnDefinition">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAuthenticated}" Value="False">
+                                <Setter Property="Width" Value="0"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ColumnDefinition.Style>
+            </ColumnDefinition>   <!-- Sidebar -->
             <ColumnDefinition Width="*"/>     <!-- Content -->
         </Grid.ColumnDefinitions>
 
         <!-- ════ SIDEBAR ═══════════════════════════════════════════════════ -->
         <Border Grid.Column="0"
-                Background="#1A2436">
+                Background="#1A2436"
+                Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVis}}">
             <DockPanel>
 
                 <!-- Logo / Brand -->
@@ -108,6 +124,14 @@
                                    Foreground="#78909C"
                                    FontSize="11"
                                    FontFamily="Segoe UI"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- User Profile -->
+                <Border DockPanel.Dock="Top" Padding="20,15" Background="#131B29">
+                    <StackPanel>
+                        <TextBlock Text="{Binding UserFullName}" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                        <TextBlock Text="{Binding UserRoleDisplay}" Foreground="#78909C" FontSize="11"/>
                     </StackPanel>
                 </Border>
 
@@ -219,8 +243,9 @@
                         </StackPanel>
                     </Button>
 
-                    <!-- Users -->
-                    <Button Command="{Binding ShowUsersCommand}">
+                    <!-- Users (Admin Only) -->
+                    <Button Command="{Binding ShowUsersCommand}"
+                            Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVis}}">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
                                 <Style.Triggers>
@@ -246,6 +271,15 @@
                         BorderBrush="#2D3C52"
                         BorderThickness="0,1,0,0">
                     <StackPanel>
+                        <Button Command="{Binding LogoutCommand}" 
+                                Content="Déconnexion" 
+                                Foreground="#EF4444" 
+                                Background="Transparent" 
+                                BorderThickness="0" 
+                                HorizontalAlignment="Left" 
+                                Padding="0" 
+                                Cursor="Hand"
+                                Margin="0,0,0,10"/>
                         <TextBlock Text="CapLed v1.0"
                                    Foreground="#455A64"
                                    FontSize="11"
@@ -287,7 +321,7 @@
                                FontSize="12"
                                FontFamily="Segoe UI"
                                VerticalAlignment="Center"
-                               Visibility="{Binding CurrentViewModel.IsLoading, Converter={StaticResource BoolToVisibility}}"/>
+                               Visibility="{Binding CurrentViewModel.IsLoading, Converter={StaticResource BoolToVis}}"/>
                 </DockPanel>
             </Border>
 

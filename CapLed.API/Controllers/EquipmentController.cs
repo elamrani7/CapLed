@@ -5,10 +5,13 @@ using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Domain.Entities;
 using StockManager.Core.Domain.Enums;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace StockManager.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class EquipmentController : ControllerBase
 {
     private readonly IEquipmentRepository _equipmentRepository;

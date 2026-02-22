@@ -14,7 +14,7 @@ public abstract class ApiClientBase
     protected readonly HttpClient Http;
 
     // ─── JSON options (match ASP.NET Core defaults: camelCase) ───────────────
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    protected static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -25,11 +25,22 @@ public abstract class ApiClientBase
         Http = httpClient;
     }
 
+    private void EnsureAuthHeader()
+    {
+        var token = CapLed.Desktop.Core.AppSession.Current.JwtToken;
+        if (!string.IsNullOrEmpty(token))
+        {
+            Http.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+    }
+
     // ─── GET ─────────────────────────────────────────────────────────────────
 
     /// <summary>HTTP GET → deserialise to T. Returns null on 404.</summary>
     protected async Task<T?> GetAsync<T>(string url)
     {
+        EnsureAuthHeader();
         try
         {
             var response = await Http.GetAsync(url);
@@ -51,6 +62,7 @@ public abstract class ApiClientBase
     /// <summary>HTTP POST with body → deserialise response to TResponse.</summary>
     protected async Task<TResponse?> PostAsync<TRequest, TResponse>(string url, TRequest body)
     {
+        EnsureAuthHeader();
         var response = await Http.PostAsJsonAsync(url, body, JsonOptions);
 
         if (response.IsSuccessStatusCode)
@@ -65,6 +77,7 @@ public abstract class ApiClientBase
     /// <summary>HTTP POST with body — no response body expected.</summary>
     protected async Task<bool> PostAsync<TRequest>(string url, TRequest body)
     {
+        EnsureAuthHeader();
         var response = await Http.PostAsJsonAsync(url, body, JsonOptions);
 
         if (response.IsSuccessStatusCode) return true;
@@ -73,7 +86,7 @@ public abstract class ApiClientBase
         throw new ApiException(error);
     }
 
-    private async Task<string> HandleErrorResponse(HttpResponseMessage response, string context)
+    protected async Task<string> HandleErrorResponse(HttpResponseMessage response, string context)
     {
         if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
@@ -101,6 +114,7 @@ public abstract class ApiClientBase
     /// <summary>HTTP PUT — returns true on success (204 No Content).</summary>
     protected async Task<bool> PutAsync<TRequest>(string url, TRequest body)
     {
+        EnsureAuthHeader();
         try
         {
             var response = await Http.PutAsJsonAsync(url, body, JsonOptions);
@@ -117,6 +131,7 @@ public abstract class ApiClientBase
     /// <summary>HTTP DELETE — returns true on success.</summary>
     protected async Task<bool> DeleteAsync(string url)
     {
+        EnsureAuthHeader();
         try
         {
             var response = await Http.DeleteAsync(url);

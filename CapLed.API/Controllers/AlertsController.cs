@@ -3,10 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using StockManager.Core.Application.DTOs;
 using StockManager.Core.Application.Interfaces.Services;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace StockManager.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class AlertsController : ControllerBase
 {
     private readonly IStockService _stockService;

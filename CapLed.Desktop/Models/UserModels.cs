@@ -1,3 +1,5 @@
+using System;
+
 namespace CapLed.Desktop.Models;
 
 /// <summary>
@@ -8,8 +10,11 @@ public class UserModel
     public int Id { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;    // "ADMIN" or "STOCK_MANAGER"
+    public string Role { get; set; } = "STOCK_MANAGER"; // Handled as string for easier UI binding if needed, or enum
     public bool IsActive { get; set; } = true;
+
+    // Helper for UI display
+    public string DisplayRole => Role == "ADMIN" ? "Administrateur" : "Gestionnaire Stock";
 }
 
 /// <summary>
