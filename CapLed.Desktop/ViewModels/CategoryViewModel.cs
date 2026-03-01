@@ -9,6 +9,7 @@ namespace CapLed.Desktop.ViewModels;
 public class CategoryViewModel : BaseViewModel
 {
     private readonly CategoryService _categoryService;
+    private readonly IConfirmationService _confirmationService;
 
     // ─── Collections ─────────────────────────────────────────────────────────
     public ObservableCollection<CategoryModel> Categories { get; } = new();
@@ -50,13 +51,6 @@ public class CategoryViewModel : BaseViewModel
 
     private int? _editingCategoryId;
 
-    private bool _isSaving;
-    public bool IsSaving
-    {
-        get => _isSaving;
-        set => SetProperty(ref _isSaving, value);
-    }
-
     public string FormTitle => IsEditMode ? "Modifier la Catégorie" : "Nouvelle Catégorie";
 
     // ─── Commands ────────────────────────────────────────────────────────────
@@ -67,9 +61,10 @@ public class CategoryViewModel : BaseViewModel
     public ICommand DeleteCommand { get; }
     public ICommand ClearFormCommand { get; }
 
-    public CategoryViewModel(CategoryService categoryService)
+    public CategoryViewModel(CategoryService categoryService, IConfirmationService confirmationService)
     {
         _categoryService = categoryService;
+        _confirmationService = confirmationService;
 
         RefreshCommand = new AsyncRelayCommand(LoadCategoriesAsync);
         AddCommand = new RelayCommand(PrepareForAdd);
@@ -81,9 +76,7 @@ public class CategoryViewModel : BaseViewModel
 
     public async Task LoadCategoriesAsync()
     {
-        if (IsLoading) return;
-        IsLoading = true;
-        ErrorMessage = null;
+        BeginOperation();
 
         try
         {
@@ -100,7 +93,7 @@ public class CategoryViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -131,9 +124,7 @@ public class CategoryViewModel : BaseViewModel
             return;
         }
 
-        IsSaving = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        BeginSave();
 
         try
         {
@@ -171,7 +162,7 @@ public class CategoryViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
     }
 
@@ -179,12 +170,10 @@ public class CategoryViewModel : BaseViewModel
     {
         if (SelectedCategory == null) return;
 
-        // Simple confirmation placeholder
-        // In a real app, use a DialogService or MessageBox from the View
+        if (!_confirmationService.Confirm("Suppression", $"Voulez-vous vraiment supprimer la catégorie '{SelectedCategory.Label}' ?"))
+            return;
         
-        IsSaving = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        BeginSave();
 
         try
         {
@@ -206,7 +195,7 @@ public class CategoryViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
     }
 

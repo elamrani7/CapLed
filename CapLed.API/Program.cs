@@ -7,6 +7,7 @@ using StockManager.Core.Application.Mapping;
 using StockManager.API.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -24,18 +25,12 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.InvalidModelStateResponseFactory = context =>
     {
         var errors = context.ModelState
-            .Where(e => e.Value?.Errors.Count > 0)
-            .SelectMany(x => x.Value!.Errors)
-            .Select(x => x.ErrorMessage)
-            .ToList();
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+            );
 
-        var response = new
-        {
-            error = "ValidationError",
-            details = errors
-        };
-
-        return new BadRequestObjectResult(response);
+        return new BadRequestObjectResult(new { errors });
     };
 });
 
@@ -54,7 +49,10 @@ builder.Services.AddDbContext<StockManagementDbContext>(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        // Accept enum values as their string names (UPPERCASE, matching enum definitions)
+        // This handles all enum DTOs including EquipmentCondition, MovementType, etc.
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 
 // ── JWT Authentication ───────────────────────────────────────────────────

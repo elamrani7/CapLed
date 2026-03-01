@@ -148,7 +148,8 @@
                 <StackPanel DockPanel.Dock="Top">
 
                     <!-- Dashboard -->
-                    <Button Command="{Binding ShowDashboardCommand}">
+                    <Button Command="{Binding ShowDashboardCommand}"
+                            Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVis}}">
                         <!-- We use DataTrigger on ActiveSection for active state highlighting -->
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButton}">

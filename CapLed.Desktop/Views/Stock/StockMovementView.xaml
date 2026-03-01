@@ -113,32 +113,78 @@
                           GridLinesVisibility="Horizontal"
                           HorizontalGridLinesBrush="#F1F5F9"
                           Background="White"
-                          BorderThickness="0">
+                          BorderThickness="0"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="DATE / HEURE" Binding="{Binding Date, StringFormat='dd/MM/yyyy HH:mm'}" Width="140"/>
-                        <DataGridTextColumn Header="ÉQUIPEMENT" Binding="{Binding EquipmentName}" Width="*" FontWeight="Medium"/>
+                        <DataGridTextColumn Header="DATE / HEURE" Binding="{Binding Date, StringFormat='dd/MM/yyyy HH:mm'}" Width="135"/>
                         
-                        <DataGridTemplateColumn Header="TYPE" Width="100">
+                        <DataGridTextColumn Header="ÉQUIPEMENT" Binding="{Binding EquipmentName}" Width="*" FontWeight="Medium">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                    <Setter Property="Padding" Value="10,0"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTemplateColumn Header="TYPE" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border Style="{StaticResource MovementBadge}">
+                                    <Border Style="{StaticResource MovementBadge}" Margin="5,0">
                                         <TextBlock Style="{StaticResource MovementText}"/>
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="QUANTITÉ" Binding="{Binding Quantity}" Width="100">
+                        <DataGridTextColumn Header="QTÉ" Binding="{Binding Quantity}" Width="Auto">
                             <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                     <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Padding" Value="15,0"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <DataGridTextColumn Header="UTILISATEUR" Binding="{Binding UserName}" Width="120"/>
-                        <DataGridTextColumn Header="COMMENTAIRE" Binding="{Binding Comment}" Width="150" />
+                        <DataGridTextColumn Header="UTILISATEUR" Binding="{Binding UserName}" Width="Auto">
+                             <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="Padding" Value="10,0"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTextColumn Header="COMMENTAIRE" Binding="{Binding Comment}" Width="1.5*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                    <Setter Property="Padding" Value="10,0"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTemplateColumn Header="ACTIONS" Width="85">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" 
+                                                Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}">
+                                        <Button Content="✏️" 
+                                                Command="{Binding DataContext.EditMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Modifier"
+                                                Style="{StaticResource DataGridIconButton}" 
+                                                Margin="0,0,4,0"/>
+                                        <Button Content="🗑️" 
+                                                Command="{Binding DataContext.DeleteMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Supprimer"
+                                                Style="{StaticResource DataGridIconButton}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
@@ -158,19 +204,33 @@
         </Grid>
 
         <!-- RIGHT COLUMN: REGISTRATION SIDEBAR -->
-        <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Effect="{DynamicResource SubtleShadow}">
+        <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" BorderBrush="#E2E8F0" BorderThickness="1">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                            <Setter Property="BorderBrush" Value="#2563EB"/>
+                            <Setter Property="BorderThickness" Value="2"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,10,0">
-                    <TextBlock Text="Nouveau Mouvement" FontSize="18" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,20"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <TextBlock Text="✨" Visibility="{Binding IsEditMode, Converter={StaticResource InverseBool}, ConverterParameter=Collapsed}"/>
+                        <TextBlock Text="✏️" Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold" Foreground="#1E293B" Margin="8,0,0,0"/>
+                    </StackPanel>
 
                     <!-- Feedback Messages -->
-                    <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,12"
+                    <Border Style="{StaticResource ErrorMessageStyle}"
                             Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
-                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#B91C1C" FontSize="12" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding ErrorMessage}"/>
                     </Border>
-                    <Border Background="#DCFCE7" BorderBrush="#22C55E" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,12"
+                    <Border Style="{StaticResource SuccessMessageStyle}"
                             Visibility="{Binding SuccessMessage, Converter={StaticResource StringToVisibility}}">
-                        <TextBlock Text="{Binding SuccessMessage}" Foreground="#15803D" FontSize="12" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding SuccessMessage}"/>
                     </Border>
 
                     <!-- Form Fields -->
@@ -246,15 +306,31 @@
                                  Height="80" TextWrapping="Wrap" AcceptsReturn="True" Padding="10" VerticalContentAlignment="Top"/>
                     </StackPanel>
 
-                    <Button Content="Valider le mouvement" 
-                            Command="{Binding RegisterMovementCommand}"
-                            Style="{StaticResource ActionButton}" 
+                    <Button Command="{Binding RegisterMovementCommand}"
                             Height="44" FontSize="14" FontWeight="Bold"
-                            Background="#1E293B">
+                            IsEnabled="{Binding IsSaving, Converter={StaticResource InverseBool}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
+                                <Setter Property="Background" Value="#1E293B"/>
+                                <Setter Property="Content" Value="{Binding SubmitButtonText}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                        <Setter Property="Background" Value="#2563EB"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <Button.Effect>
                             <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
                         </Button.Effect>
                     </Button>
+
+                    <Button Content="Annuler / Nouveau" 
+                            Command="{Binding CancelEditCommand}"
+                            Style="{StaticResource ActionButton}" 
+                            Height="36" Margin="0,10,0,0"
+                            Background="Transparent" Foreground="#64748B" BorderBrush="#E2E8F0"
+                            Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}"/>
                     
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0"
                                 Visibility="{Binding IsSaving, Converter={StaticResource BoolToVis}}">

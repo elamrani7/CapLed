@@ -59,51 +59,26 @@
                              users:PasswordBoxHelper.Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!-- Error Message -->
-                <TextBlock Text="{Binding ErrorMessage}" 
-                           Foreground="#E53935" 
-                           FontSize="12" 
-                           TextWrapping="Wrap"
-                           Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}"
-                           Margin="0,0,0,15"/>
+                <Border Style="{StaticResource ErrorMessageStyle}"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
+                    <TextBlock Text="{Binding ErrorMessage}" FontSize="12"/>
+                </Border>
 
                 <!-- Login Button -->
                 <Button Command="{Binding LoginCommand}" 
                         Content="Se connecter" 
+                        Style="{StaticResource ActionButton}"
                         Height="45" 
                         Background="#2563EB" 
-                        Foreground="White" 
-                        FontWeight="Bold" 
                         FontSize="16"
-                        Cursor="Hand"
-                        Margin="0,10,0,0">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#1D4ED8"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Background" Value="#94A3B8"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}"
+                        Margin="0,10,0,0"/>
 
                 <!-- Loading Indicator -->
                 <ProgressBar Height="4" 
                              IsIndeterminate="True" 
                              Margin="0,15,0,0"
-                             Visibility="{Binding IsLoggingIn, Converter={StaticResource BoolToVis}}"/>
+                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
         </Border>
     </Grid>

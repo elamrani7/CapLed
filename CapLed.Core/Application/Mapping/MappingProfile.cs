@@ -1,3 +1,4 @@
+using StockManager.Core.Domain.Enums;
 using AutoMapper;
 using StockManager.Core.Application.DTOs;
 using StockManager.Core.Domain.Entities;
@@ -13,7 +14,8 @@ public class MappingProfile : Profile
 
         // Equipment Mappings (Back-office)
         CreateMap<Equipment, EquipmentListItemDto>()
-            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Label : string.Empty));
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Label : string.Empty))
+            .ForMember(dest => dest.AlertLevel, opt => opt.MapFrom(src => StockAlertHelper.GetAlertLevel(src.Quantity)));
 
         CreateMap<Equipment, EquipmentReadDto>()
             .IncludeBase<Equipment, EquipmentListItemDto>();
@@ -56,7 +58,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.EquipmentId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.EquipmentName, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.CurrentQuantity, opt => opt.MapFrom(src => src.Quantity))
-            .ForMember(dest => dest.Threshold, opt => opt.MapFrom(src => src.MinThreshold));
+            .ForMember(dest => dest.Threshold, opt => opt.MapFrom(src => src.MinThreshold))
+            .ForMember(dest => dest.AlertLevel, opt => opt.MapFrom(src => StockAlertHelper.GetAlertLevel(src.Quantity)));
 
         // ContactRequest Mappings
         CreateMap<ContactRequest, ContactRequestReadDto>()

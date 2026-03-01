@@ -1,3 +1,5 @@
+using StockManager.Core.Domain.Enums;
+
 namespace CapLed.Desktop.Models;
 
 /// <summary>
@@ -11,6 +13,7 @@ public class EquipmentListItemModel
     public string CategoryName { get; set; } = string.Empty;
     public string Condition { get; set; } = string.Empty;  // "NEW" or "USED"
     public int Quantity { get; set; }
+    public StockAlertLevel AlertLevel { get; set; }
 }
 
 /// <summary>

@@ -10,6 +10,7 @@ public class EquipmentListViewModel : BaseViewModel
 {
     private readonly EquipmentService _equipmentService;
     private readonly CategoryService _categoryService;
+    private readonly IConfirmationService _confirmationService;
 
     // ─── Collections ─────────────────────────────────────────────────────────
     public ObservableCollection<EquipmentListItemModel> EquipmentItems { get; } = new();
@@ -88,10 +89,11 @@ public class EquipmentListViewModel : BaseViewModel
     // ─── Navigation Support ───────────────────────────────────────────────────
     public Func<int?, Task>? NavigateToDetailRequested { get; set; }
 
-    public EquipmentListViewModel(EquipmentService equipmentService, CategoryService categoryService)
+    public EquipmentListViewModel(EquipmentService equipmentService, CategoryService categoryService, IConfirmationService confirmationService)
     {
         _equipmentService = equipmentService;
         _categoryService = categoryService;
+        _confirmationService = confirmationService;
 
         _selectedCondition = ConditionOptions[0]; // "Tous"
 
@@ -129,9 +131,7 @@ public class EquipmentListViewModel : BaseViewModel
 
     private async Task LoadEquipmentAsync()
     {
-        if (IsLoading) return;
-        IsLoading = true;
-        ErrorMessage = null;
+        BeginOperation();
 
         try
         {
@@ -160,7 +160,7 @@ public class EquipmentListViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -188,12 +188,12 @@ public class EquipmentListViewModel : BaseViewModel
     {
         if (SelectedEquipment == null) return;
 
-        // Simplified confirmation (In production, use a DialogService)
-        // if (MessageBox.Show("Supprimer cet équipement ?", "Confirmation", MessageBoxButton.YesNo) == MessageBoxResult.No) return;
+        if (!_confirmationService.Confirm("Suppression", $"Voulez-vous vraiment supprimer l'équipement '{SelectedEquipment.Name}' ?"))
+            return;
 
+        BeginSave();
         try
         {
-            IsLoading = true;
             bool success = await _equipmentService.DeleteAsync(SelectedEquipment.Id);
             if (success)
             {
@@ -207,7 +207,7 @@ public class EquipmentListViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndSave();
         }
     }
 }

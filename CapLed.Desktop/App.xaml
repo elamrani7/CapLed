@@ -15,6 +15,9 @@
             <conv:ConditionToBrushConverter x:Key="ConditionToBrush"/>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
             <conv:InverseNullToBoolConverter x:Key="InverseNullToBool"/>
+            <conv:StockAlertToBrushConverter x:Key="StockAlertToBrush"/>
+            <conv:StockAlertToIconConverter x:Key="StockAlertToIcon"/>
+            <conv:StockAlertToTextConverter x:Key="StockAlertToText"/>
 
             <!-- ─── Styling Tokens ──────────── -->
             
@@ -33,7 +36,7 @@
                             <Border Background="{TemplateBinding Background}" 
                                     BorderBrush="{TemplateBinding BorderBrush}" 
                                     BorderThickness="{TemplateBinding BorderThickness}" 
-                                    CornerRadius="6">
+                                    CornerRadius="8">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </ControlTemplate>
@@ -73,7 +76,7 @@
                 <Setter Property="Background" Value="White"/>
                 <Style.Resources>
                     <Style TargetType="Border">
-                        <Setter Property="CornerRadius" Value="6"/>
+                        <Setter Property="CornerRadius" Value="8"/>
                     </Style>
                 </Style.Resources>
                 <Style.Triggers>
@@ -86,22 +89,23 @@
 
             <!-- DataGrid Styles -->
             <Style x:Key="FlatColumnHeaderStyle" TargetType="DataGridColumnHeader">
-                <Setter Property="Background" Value="#F8FAF8"/>
-                <Setter Property="Foreground" Value="#64748B"/>
+                <Setter Property="Background" Value="#F1F5F9"/>
+                <Setter Property="Foreground" Value="#475569"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Padding" Value="12,10"/>
-                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                <Setter Property="Padding" Value="15,12"/>
+                <Setter Property="BorderThickness" Value="0,0,0,2"/>
                 <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
             </Style>
 
             <Style x:Key="FlatDataGridCellStyle" TargetType="DataGridCell">
-                <Setter Property="Padding" Value="12,10"/>
+                <Setter Property="Padding" Value="15,12"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                 <Style.Triggers>
                     <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Background" Value="#EFF6FF"/>
-                        <Setter Property="Foreground" Value="#2563EB"/>
+                        <Setter Property="Background" Value="#DBEAFE"/>
+                        <Setter Property="Foreground" Value="#1E40AF"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -109,7 +113,146 @@
             <Style x:Key="FlatDataGridRowStyle" TargetType="DataGridRow">
                 <Setter Property="BorderThickness" Value="0,0,0,1"/>
                 <Setter Property="BorderBrush" Value="#F1F5F9"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#F8FAFC"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
+
+            <!-- DataGrid Icon Buttons (✏️, 🗑️) -->
+            <Style x:Key="DataGridIconButton" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="#64748B"/> <!-- Neutral slate Color -->
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Width" Value="32"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.9"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <!-- Neutral Hover -->
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#F1F5F9"/>
+                        <Setter Property="Foreground" Value="#1E293B"/>
+                    </Trigger>
+                    
+                    <!-- Edit Hover Specific Color -->
+                    <MultiTrigger>
+                        <MultiTrigger.Conditions>
+                            <Condition Property="IsMouseOver" Value="True"/>
+                            <Condition Property="ToolTip" Value="Modifier"/>
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Foreground" Value="#2563EB"/> <!-- Blue-600 -->
+                        <Setter Property="Background" Value="#DBEAFE"/> <!-- Blue-100 -->
+                    </MultiTrigger>
+                    
+                    <!-- Delete Hover Specific Color -->
+                    <MultiTrigger>
+                        <MultiTrigger.Conditions>
+                            <Condition Property="IsMouseOver" Value="True"/>
+                            <Condition Property="ToolTip" Value="Supprimer"/>
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Foreground" Value="#EF4444"/> <!-- Red-600 -->
+                        <Setter Property="Background" Value="#FEE2E2"/> <!-- Red-100 -->
+                    </MultiTrigger>
+
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="RenderTransform">
+                            <Setter.Value>
+                                <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                            </Setter.Value>
+                        </Setter>
+                        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ─── Feedback & Feedback Banners ──────────── -->
+            
+            <Style x:Key="ErrorMessageStyle" TargetType="Border">
+                <Setter Property="Background" Value="#FEE2E2"/>
+                <Setter Property="BorderBrush" Value="#EF4444"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="8"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Margin" Value="0,0,0,15"/>
+            </Style>
+
+            <Style x:Key="SuccessMessageStyle" TargetType="Border">
+                <Setter Property="Background" Value="#DCFCE7"/>
+                <Setter Property="BorderBrush" Value="#22C55E"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="8"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Margin" Value="0,0,0,15"/>
+            </Style>
+
+            <!-- ─── Functional Styles ──────────── -->
+            
+            <Style x:Key="BackButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="#64748B"/>
+                <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Width" Value="Auto"/>
+            </Style>
+
+            <!-- ─── Global Component Styles (Premium) ──────────── -->
+            
+            <Style TargetType="DataGrid">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                <Setter Property="RowHeight" Value="42"/>
+                <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
+                <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="#F1F5F9"/>
+                <Setter Property="HeadersVisibility" Value="Column"/>
+                <Setter Property="CanUserAddRows" Value="False"/>
+                <Setter Property="ColumnHeaderStyle" Value="{StaticResource FlatColumnHeaderStyle}"/>
+                <Setter Property="CellStyle" Value="{StaticResource FlatDataGridCellStyle}"/>
+                <Setter Property="RowStyle" Value="{StaticResource FlatDataGridRowStyle}"/>
+            </Style>
+
+            <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
+                <Style.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="8"/>
+                    </Style>
+                </Style.Resources>
+            </Style>
+            <!-- ─── Stock Alert Badge Template ──────────── -->
+            <DataTemplate x:Key="StockAlertBadgeTemplate">
+                <Border CornerRadius="10" Padding="8,4" Margin="2,0"
+                        Background="{Binding AlertLevel, Converter={StaticResource StockAlertToBrush}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding AlertLevel}" Value="NONE">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding AlertLevel, Converter={StaticResource StockAlertToIcon}}" 
+                                   Foreground="White" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding AlertLevel, Converter={StaticResource StockAlertToText}}" 
+                                   Foreground="White" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -17,6 +17,8 @@ public class EnumToStringConverter : IValueConverter
         // EquipmentCondition
         { "NEW",           "Neuf"          },
         { "USED",          "Occasion"      },
+        { "DAMAGED",       "Endommagé"     },
+        { "REPAIRING",     "En réparation" },
         // MovementType
         { "ENTRY",         "Entrée"        },
         { "EXIT",          "Sortie"        },

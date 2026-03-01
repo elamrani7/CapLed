@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CapLed.Desktop.Services;
 
@@ -18,6 +19,7 @@ public abstract class ApiClientBase
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter() }
     };
 
     protected ApiClientBase(HttpClient httpClient)
@@ -41,20 +43,20 @@ public abstract class ApiClientBase
     protected async Task<T?> GetAsync<T>(string url)
     {
         EnsureAuthHeader();
-        try
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
         {
-            var response = await Http.GetAsync(url);
-
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                return default;
-
-            response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<T>(JsonOptions);
         }
-        catch (HttpRequestException ex)
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            throw new ApiException($"GET {url} failed: {ex.Message}", ex);
+            return default;
         }
+
+        var error = await HandleErrorResponse(response, $"GET {url}");
+        throw new ApiException(error);
     }
 
     // ─── POST ────────────────────────────────────────────────────────────────
@@ -88,6 +90,16 @@ public abstract class ApiClientBase
 
     protected async Task<string> HandleErrorResponse(HttpResponseMessage response, string context)
     {
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            return "Session expirée ou non autorisée. Veuillez vous reconnecter.";
+        }
+
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            return "Accès refusé. Vous n'avez pas les permissions nécessaires pour cette action.";
+        }
+
         if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
             try
@@ -96,11 +108,16 @@ public abstract class ApiClientBase
                 var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
                 if (problem.TryGetProperty("errors", out var errors))
                 {
+                    // Check for both ASP.NET Core default errors and our custom { errors: { Error: [...] } }
                     return $"{context} validation failed: {errors.ToString()}";
                 }
                 if (problem.TryGetProperty("detail", out var detail))
                 {
                     return $"{context} failed: {detail.GetString()}";
+                }
+                if (problem.TryGetProperty("error", out var error))
+                {
+                    return $"{context} failed: {error.GetString()}";
                 }
             }
             catch { /* fallback to generic error */ }
@@ -115,15 +132,13 @@ public abstract class ApiClientBase
     protected async Task<bool> PutAsync<TRequest>(string url, TRequest body)
     {
         EnsureAuthHeader();
-        try
-        {
-            var response = await Http.PutAsJsonAsync(url, body, JsonOptions);
-            return response.IsSuccessStatusCode;
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new ApiException($"PUT {url} failed: {ex.Message}", ex);
-        }
+        System.Diagnostics.Debug.WriteLine($"API PUT: {url}");
+        var response = await Http.PutAsJsonAsync(url, body, JsonOptions);
+
+        if (response.IsSuccessStatusCode) return true;
+
+        var error = await HandleErrorResponse(response, $"PUT {url}");
+        throw new ApiException(error);
     }
 
     // ─── DELETE ──────────────────────────────────────────────────────────────
@@ -132,15 +147,12 @@ public abstract class ApiClientBase
     protected async Task<bool> DeleteAsync(string url)
     {
         EnsureAuthHeader();
-        try
-        {
-            var response = await Http.DeleteAsync(url);
-            return response.IsSuccessStatusCode;
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new ApiException($"DELETE {url} failed: {ex.Message}", ex);
-        }
+        var response = await Http.DeleteAsync(url);
+
+        if (response.IsSuccessStatusCode) return true;
+
+        var error = await HandleErrorResponse(response, $"DELETE {url}");
+        throw new ApiException(error);
     }
 }
 

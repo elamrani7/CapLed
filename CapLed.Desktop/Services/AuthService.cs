@@ -24,18 +24,20 @@ public class AuthService : ApiClientBase
                 session.FullName = response.FullName;
                 session.Role = response.Role;
                 session.UserName = response.Email; // Using email as username for now
-                
+
                 return true;
             }
             return false;
         }
         catch (ApiException)
         {
-            return false;
+            // Re-throw so LoginViewModel can display the real API error message
+            throw;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return false;
+            // Wrap connectivity/network errors with a clear description
+            throw new ApiException($"Erreur de connexion au serveur : {ex.Message}", ex);
         }
     }
 

@@ -13,6 +13,7 @@ public class EquipmentListItemDto
     public string CategoryName { get; set; } = string.Empty;
     public EquipmentCondition Condition { get; set; }
     public int Quantity { get; set; }
+    public StockAlertLevel AlertLevel { get; set; }
 }
 
 public class EquipmentReadDto : EquipmentListItemDto

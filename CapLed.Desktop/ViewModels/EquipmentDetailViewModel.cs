@@ -72,14 +72,6 @@ public class EquipmentDetailViewModel : BaseViewModel
     public ObservableCollection<CategoryModel> Categories { get; } = new();
     public List<string> ConditionOptions { get; } = new() { "NEW", "USED", "DAMAGED", "REPAIRING" };
 
-    // ─── State ───────────────────────────────────────────────────────────────
-    private bool _isSaving;
-    public bool IsSaving
-    {
-        get => _isSaving;
-        private set => SetProperty(ref _isSaving, value);
-    }
-
     public string Title => IsEditMode ? "Modifier l'Équipement" : "Nouvel Équipement";
 
     // ─── Commands ────────────────────────────────────────────────────────────
@@ -105,9 +97,7 @@ public class EquipmentDetailViewModel : BaseViewModel
     /// </summary>
     public async Task LoadAsync(int? id = null)
     {
-        IsLoading = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        BeginOperation();
         Id = id;
         IsEditMode = id.HasValue;
 
@@ -124,7 +114,11 @@ public class EquipmentDetailViewModel : BaseViewModel
                     Name = equipment.Name;
                     Reference = equipment.Reference;
                     Description = equipment.Description ?? string.Empty;
-                    SelectedCondition = equipment.Condition;
+                    
+                    // Case-insensitive match for the condition string from API
+                    var match = ConditionOptions.FirstOrDefault(o => o.Equals(equipment.Condition, StringComparison.OrdinalIgnoreCase));
+                    SelectedCondition = match ?? "NEW";
+
                     Quantity = equipment.Quantity;
                     SelectedCategory = Categories.FirstOrDefault(c => c.Id == equipment.CategoryId);
                 }
@@ -150,7 +144,7 @@ public class EquipmentDetailViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -165,8 +159,7 @@ public class EquipmentDetailViewModel : BaseViewModel
     {
         if (!Validate()) return;
 
-        IsSaving = true;
-        ErrorMessage = null;
+        BeginSave();
 
         try
         {
@@ -202,7 +195,7 @@ public class EquipmentDetailViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
     }
 

@@ -19,6 +19,7 @@ public class MainViewModel : BaseViewModel
     private readonly AlertsViewModel _alertsVm;
     private readonly UserViewModel _userVm;
     private readonly LoginViewModel _loginVm;
+    private readonly IConfirmationService _confirmationService;
 
     // ─── Authentication State ─────────────────────────────────────────────────
     public bool IsAuthenticated => _session.IsAuthenticated;
@@ -59,6 +60,7 @@ public class MainViewModel : BaseViewModel
         StockMovementViewModel stockVm,
         AlertsViewModel alertsVm,
         UserViewModel userVm,
+        IConfirmationService confirmationService,
         Func<MainViewModel, LoginViewModel> loginVmFactory)
     {
         _authService = authService;
@@ -69,6 +71,7 @@ public class MainViewModel : BaseViewModel
         _stockVm = stockVm;
         _alertsVm = alertsVm;
         _userVm = userVm;
+        _confirmationService = confirmationService;
         
         // Use factory to avoid circular dependency
         _loginVm = loginVmFactory(this);
@@ -86,9 +89,16 @@ public class MainViewModel : BaseViewModel
 
         // Initial view
         if (IsAuthenticated)
-            Navigate("Dashboard", _dashboardVm);
+        {
+            if (IsAdmin)
+                Navigate("Dashboard", _dashboardVm);
+            else
+                Navigate("Equipment", _equipmentListVm);
+        }
         else
+        {
             ShowLogin();
+        }
     }
 
     public void ShowLogin()
@@ -102,8 +112,11 @@ public class MainViewModel : BaseViewModel
 
     private void ExecuteLogout()
     {
-        _authService.Logout();
-        ShowLogin();
+        if (_confirmationService.Confirm("Déconnexion", "Voulez-vous vraiment vous déconnecter ?"))
+        {
+            _authService.Logout();
+            ShowLogin();
+        }
     }
 
     private async void Navigate(string section, BaseViewModel viewModel)

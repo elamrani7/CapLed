@@ -70,6 +70,18 @@ public class StockService : ApiClientBase
         return result ?? new PagedResult<StockMovementModel>();
     }
 
+    /// <summary>PUT api/v1/Stock/{id} — update a movement.</summary>
+    public async Task<bool> UpdateAsync(int id, StockMovementCreateModel model)
+    {
+        return await PutAsync<StockMovementCreateModel>($"api/v1/Stock/{id}", model);
+    }
+
+    /// <summary>DELETE api/v1/Stock/{id} — delete a movement.</summary>
+    public async Task<bool> DeleteAsync(int id)
+    {
+        return await DeleteAsync($"api/v1/Stock/{id}");
+    }
+
     // ─── Helper ──────────────────────────────────────────────────────────────
     private static string BuildQuery(params (string Key, string? Value)[] parameters)
     {

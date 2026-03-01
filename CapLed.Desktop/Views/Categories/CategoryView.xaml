@@ -42,8 +42,7 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="15" HorizontalAlignment="Right">
-                        <Button Content="Actualiser" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"/>
-                        <Button Content="+ Ajouter" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                        <Button Content="Actualiser" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
                     </StackPanel>
 
                     <DataGrid Grid.Row="1" 
@@ -75,14 +74,14 @@
                         <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,20" Foreground="#334155"/>
 
                         <!-- Notifications -->
-                        <Border Background="#fef2f2" BorderBrush="#fee2e2" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,15"
+                        <Border Style="{StaticResource ErrorMessageStyle}"
                                 Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
-                            <TextBlock Text="{Binding ErrorMessage}" Foreground="#ef4444" TextWrapping="Wrap" FontSize="13"/>
+                            <TextBlock Text="{Binding ErrorMessage}"/>
                         </Border>
 
-                        <Border Background="#f0fdf4" BorderBrush="#dcfce7" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,15"
+                        <Border Style="{StaticResource SuccessMessageStyle}"
                                 Visibility="{Binding SuccessMessage, Converter={StaticResource StringToVisibility}}">
-                            <TextBlock Text="{Binding SuccessMessage}" Foreground="#22c55e" TextWrapping="Wrap" FontSize="13"/>
+                            <TextBlock Text="{Binding SuccessMessage}"/>
                         </Border>
 
                         <!-- Label -->

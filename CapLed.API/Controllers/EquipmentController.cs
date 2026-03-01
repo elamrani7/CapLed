@@ -60,7 +60,7 @@ public class EquipmentController : ControllerBase
     /// Create a new equipment item.
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<EquipmentReadDto>> Create(EquipmentCreateDto createDto)
+    public async Task<ActionResult<EquipmentReadDto>> Create([FromBody] EquipmentCreateDto createDto)
     {
         var entity = _mapper.Map<Equipment>(createDto);
         entity.CreatedAt = DateTime.UtcNow;
@@ -75,7 +75,7 @@ public class EquipmentController : ControllerBase
     /// Update an existing equipment item.
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, EquipmentUpdateDto updateDto)
+    public async Task<IActionResult> Update(int id, [FromBody] EquipmentUpdateDto updateDto)
     {
         var existing = await _equipmentRepository.GetByIdAsync(id);
         if (existing == null) return NotFound();

@@ -11,7 +11,19 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - capledproject_mysql_data:/var/lib/mysql
+
+  backend:
+    build: .
+    container_name: capled-api
+    depends_on:
+      - database
+    ports:
+      - "5000:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=database;Database=capled_stock;Uid=root;Pwd=root;
+      - Logging__LogLevel__Default=Information
 
 volumes:
-  mysql_data:
+  capledproject_mysql_data:
+    external: true

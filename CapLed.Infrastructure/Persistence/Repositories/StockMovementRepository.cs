@@ -25,6 +25,7 @@ public class StockMovementRepository : IStockMovementRepository
     {
         return await _context.StockMovements
             .Include(m => m.Equipment)
+            .Include(m => m.User)
             .Where(m => m.EquipmentId == equipmentId)
             .OrderByDescending(m => m.CreatedAt)
             .ToListAsync();
@@ -40,6 +41,7 @@ public class StockMovementRepository : IStockMovementRepository
     {
         var query = _context.StockMovements
             .Include(m => m.Equipment)
+            .Include(m => m.User)
             .AsQueryable();
 
         if (equipmentId.HasValue)
@@ -52,7 +54,7 @@ public class StockMovementRepository : IStockMovementRepository
             query = query.Where(m => m.CreatedAt >= dateFrom.Value);
 
         if (dateTo.HasValue)
-            query = query.Where(m => m.CreatedAt <= dateTo.Value);
+            query = query.Where(m => m.CreatedAt < dateTo.Value.Date.AddDays(1));
 
         int totalCount = await query.CountAsync();
 
@@ -63,6 +65,30 @@ public class StockMovementRepository : IStockMovementRepository
             .ToListAsync();
 
         return (items, totalCount);
+    }
+
+    public async Task<StockMovement?> GetByIdAsync(int id)
+    {
+        return await _context.StockMovements
+            .Include(m => m.Equipment)
+            .Include(m => m.User)
+            .FirstOrDefaultAsync(m => m.Id == id);
+    }
+
+    public async Task UpdateAsync(StockMovement movement)
+    {
+        _context.StockMovements.Update(movement);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        var movement = await _context.StockMovements.FindAsync(id);
+        if (movement != null)
+        {
+            _context.StockMovements.Remove(movement);
+            await _context.SaveChangesAsync();
+        }
     }
 }
 

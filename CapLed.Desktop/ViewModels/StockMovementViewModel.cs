@@ -10,6 +10,28 @@ public class StockMovementViewModel : BaseViewModel
 {
     private readonly StockService _stockService;
     private readonly EquipmentService _equipmentService;
+    private readonly IConfirmationService _confirmationService;
+    private readonly CapLed.Desktop.Core.AppSession _session;
+
+    public bool IsAdmin => _session.IsAdmin;
+
+    // ─── Mode & Selection ────────────────────────────────────────────────────
+    private bool _isEditMode;
+    public bool IsEditMode
+    {
+        get => _isEditMode;
+        set => SetProperty(ref _isEditMode, value);
+    }
+
+    private StockMovementModel? _selectedMovement;
+    public StockMovementModel? SelectedMovement
+    {
+        get => _selectedMovement;
+        set => SetProperty(ref _selectedMovement, value);
+    }
+
+    public string FormTitle => IsEditMode ? "Modifier le Mouvement" : "Nouveau Mouvement";
+    public string SubmitButtonText => IsEditMode ? "Enregistrer les modifications" : "Valider le mouvement";
 
     // ─── Collections ─────────────────────────────────────────────────────────
     public ObservableCollection<StockMovementModel> Movements { get; } = new();
@@ -80,14 +102,6 @@ public class StockMovementViewModel : BaseViewModel
         set => SetProperty(ref _movementComment, value);
     }
 
-    private bool _isSaving;
-    public bool IsSaving
-    {
-        get => _isSaving;
-        set => SetProperty(ref _isSaving, value);
-    }
-
-    // ─── Paging ──────────────────────────────────────────────────────────────
     private int _page = 1;
     public int Page
     {
@@ -121,15 +135,24 @@ public class StockMovementViewModel : BaseViewModel
     public ICommand RegisterMovementCommand { get; }
     public ICommand PreviousPageCommand { get; }
     public ICommand NextPageCommand { get; }
+    public ICommand CancelEditCommand { get; }
+    public ICommand DeleteMovementCommand { get; }
+    public ICommand EditMovementCommand { get; }
 
-    public StockMovementViewModel(StockService stockService, EquipmentService equipmentService)
+    public StockMovementViewModel(StockService stockService, EquipmentService equipmentService, IConfirmationService confirmationService)
     {
         _stockService = stockService;
         _equipmentService = equipmentService;
+        _confirmationService = confirmationService;
+        _session = CapLed.Desktop.Core.AppSession.Current;
 
         RefreshCommand = new AsyncRelayCommand(async () => { Page = 1; await LoadHistoryAsync(); });
         ClearFiltersCommand = new AsyncRelayCommand(ClearFiltersAsync);
         RegisterMovementCommand = new AsyncRelayCommand(RegisterMovementAsync, () => !IsSaving);
+        CancelEditCommand = new RelayCommand(ResetForm);
+        
+        EditMovementCommand = new RelayCommand(p => PrepareEdit((StockMovementModel)p!));
+        DeleteMovementCommand = new AsyncRelayCommand(async (param) => await DeleteMovementAsync(param as StockMovementModel), _ => IsAdmin);
         
         PreviousPageCommand = new AsyncRelayCommand(async () => { if (Page > 1) { Page--; await LoadHistoryAsync(); } });
         NextPageCommand = new AsyncRelayCommand(async () => { if (Page < TotalPages) { Page++; await LoadHistoryAsync(); } });
@@ -157,8 +180,7 @@ public class StockMovementViewModel : BaseViewModel
 
     private async Task LoadHistoryAsync()
     {
-        IsLoading = true;
-        ErrorMessage = null;
+        BeginOperation();
         try
         {
             var filter = new StockMovementFilter
@@ -182,7 +204,7 @@ public class StockMovementViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -194,6 +216,35 @@ public class StockMovementViewModel : BaseViewModel
         FilterDateTo = null;
         Page = 1;
         await LoadHistoryAsync();
+    }
+
+    private void PrepareEdit(StockMovementModel movement)
+    {
+        IsEditMode = true;
+        SelectedMovement = movement; // FIX: Ensure ID is tracked for the PUT request
+        OnPropertyChanged(nameof(FormTitle));
+        OnPropertyChanged(nameof(SubmitButtonText));
+
+        SelectedEquipmentForNew = EquipmentChoices.FirstOrDefault(e => e.Id == movement.EquipmentId);
+        MovementQuantity = movement.Quantity;
+        NewMovementType = movement.Type;
+        MovementDate = movement.Date;
+        MovementComment = movement.Comment;
+    }
+
+    private void ResetForm()
+    {
+        IsEditMode = false;
+        SelectedMovement = null;
+        OnPropertyChanged(nameof(FormTitle));
+        OnPropertyChanged(nameof(SubmitButtonText));
+
+        SelectedEquipmentForNew = null;
+        MovementQuantity = 1;
+        MovementDate = DateTime.Now;
+        MovementComment = string.Empty;
+        ErrorMessage = null;
+        SuccessMessage = null;
     }
 
     private async Task RegisterMovementAsync()
@@ -210,9 +261,7 @@ public class StockMovementViewModel : BaseViewModel
             return;
         }
 
-        IsSaving = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        BeginSave();
 
         try
         {
@@ -225,20 +274,31 @@ public class StockMovementViewModel : BaseViewModel
                 Comment = MovementComment
             };
 
-            StockMovementModel? result;
-            if (NewMovementType == "ENTRY")
-                result = await _stockService.RecordEntryAsync(model);
-            else
-                result = await _stockService.RecordExitAsync(model);
-
-            if (result != null)
+            StockMovementModel? result = null;
+            if (IsEditMode && SelectedMovement != null)
             {
-                SuccessMessage = "Mouvement enregistré avec succès.";
-                // Reset form
-                MovementComment = string.Empty;
-                MovementQuantity = 1;
-                // Refresh list
-                await LoadHistoryAsync();
+                // Ensure we are calling the PUT method
+                var success = await _stockService.UpdateAsync(SelectedMovement.Id, model);
+                if (success) 
+                {
+                    SuccessMessage = "Mouvement modifié avec succès.";
+                    await LoadHistoryAsync();
+                    ResetForm();
+                }
+            }
+            else
+            {
+                if (NewMovementType == "ENTRY")
+                    result = await _stockService.RecordEntryAsync(model);
+                else
+                    result = await _stockService.RecordExitAsync(model);
+
+                if (result != null)
+                {
+                    SuccessMessage = "Mouvement enregistré avec succès.";
+                    ResetForm();
+                    await LoadHistoryAsync();
+                }
             }
         }
         catch (Exception ex)
@@ -247,7 +307,36 @@ public class StockMovementViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
+        }
+    }
+
+    private async Task DeleteMovementAsync(StockMovementModel? movement)
+    {
+        if (movement == null) return;
+
+        if (_confirmationService.Confirm("Confirmation de suppression", 
+            $"Voulez-vous vraiment supprimer ce mouvement de {movement.Quantity} {movement.EquipmentName} ?\nCela impactera le stock actuel."))
+        {
+            BeginOperation();
+            try
+            {
+                var success = await _stockService.DeleteAsync(movement.Id);
+                if (success)
+                {
+                    SuccessMessage = "Mouvement supprimé.";
+                    await LoadHistoryAsync();
+                    if (SelectedMovement?.Id == movement.Id) ResetForm();
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Erreur suppression : " + ex.Message;
+            }
+            finally
+            {
+                EndOperation();
+            }
         }
     }
 }

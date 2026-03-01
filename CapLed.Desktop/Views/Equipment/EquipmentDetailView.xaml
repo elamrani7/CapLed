@@ -21,20 +21,24 @@
 
         <!-- 1. Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,25">
+            <Button Command="{Binding CancelCommand}" Style="{StaticResource BackButton}" HorizontalAlignment="Left" Margin="0,0,0,10">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="←" Margin="0,0,5,0"/>
+                    <TextBlock Text="Retour à la liste"/>
+                </StackPanel>
+            </Button>
             <TextBlock Text="{Binding Title}" FontSize="28" FontWeight="Bold" Foreground="#1A2436"/>
             
             <!-- Error Message -->
-            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" 
-                    CornerRadius="4" Padding="12" Margin="0,15,0,0"
+            <Border Style="{StaticResource ErrorMessageStyle}"
                     Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="#B91C1C" FontWeight="Medium"/>
+                <TextBlock Text="{Binding ErrorMessage}"/>
             </Border>
 
             <!-- Success Message -->
-            <Border Background="#DCFCE7" BorderBrush="#22C55E" BorderThickness="1" 
-                    CornerRadius="4" Padding="12" Margin="0,15,0,0"
+            <Border Style="{StaticResource SuccessMessageStyle}"
                     Visibility="{Binding SuccessMessage, Converter={StaticResource StringToVisibility}}">
-                <TextBlock Text="{Binding SuccessMessage}" Foreground="#15803D" FontWeight="Medium"/>
+                <TextBlock Text="{Binding SuccessMessage}"/>
             </Border>
         </StackPanel>
 
@@ -127,7 +131,8 @@
         </ScrollViewer>
 
         <!-- 3. Footer Buttons -->
-        <Border Grid.Row="2" Padding="0,20,0,0" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Padding="0,20,0,0" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
+                IsEnabled="{Binding IsSaving, Converter={StaticResource InverseBool}}">
             <DockPanel>
                 <Button Content="Annuler" Command="{Binding CancelCommand}" 
                         Background="Transparent" BorderBrush="#CBD5E1" Foreground="#475569"

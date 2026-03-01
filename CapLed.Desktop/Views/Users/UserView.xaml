@@ -55,8 +55,7 @@
         <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="25" Effect="{DynamicResource SubtleShadow}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
-                    <TextBlock Text="{Binding IsEditMode, ConverterParameter='Modifier Utilisateur', Converter={StaticResource StringEquality}}" 
-                               FontSize="18" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,25">
+                    <TextBlock FontSize="18" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,25">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Text" Value="Nouvel Utilisateur"/>
@@ -70,13 +69,13 @@
                     </TextBlock>
 
                     <!-- Feedback -->
-                    <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,15"
+                    <Border Style="{StaticResource ErrorMessageStyle}"
                             Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
-                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#B91C1C" TextWrapping="Wrap" FontSize="12"/>
+                        <TextBlock Text="{Binding ErrorMessage}"/>
                     </Border>
-                    <Border Background="#DCFCE7" BorderBrush="#22C55E" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,15"
+                    <Border Style="{StaticResource SuccessMessageStyle}"
                             Visibility="{Binding SuccessMessage, Converter={StaticResource StringToVisibility}}">
-                        <TextBlock Text="{Binding SuccessMessage}" Foreground="#15803D" TextWrapping="Wrap" FontSize="12"/>
+                        <TextBlock Text="{Binding SuccessMessage}"/>
                     </Border>
 
                     <!-- Fields -->
@@ -109,7 +108,8 @@
                     </StackPanel>
 
                     <!-- Actions -->
-                    <Button Content="Enregistrer" Command="{Binding SaveUserCommand}" Style="{StaticResource ActionButton}" Margin="0,0,0,12" Height="42"/>
+                    <Button Content="Enregistrer" Command="{Binding SaveUserCommand}" Style="{StaticResource ActionButton}" Margin="0,0,0,12" Height="42"
+                            IsEnabled="{Binding IsSaving, Converter={StaticResource InverseBool}}"/>
                     
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -120,9 +120,9 @@
                         <Button Grid.Column="1" Content="Vider" Command="{Binding ClearFormCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="5,0,0,0"/>
                     </Grid>
 
-                    <Button Content="Modifier Sélection" Command="{Binding EditUserCommand}" Style="{StaticResource ActionButton}" Background="#64748B" Margin="0,15,0,0" Height="36"/>
-                    <Button Content="Supprimer" Command="{Binding DeleteUserCommand}" Style="{StaticResource ActionButton}" Background="#EF4444" Margin="0,10,0,0" Height="36"
-                            IsEnabled="{Binding SelectedUser, Converter={StaticResource InverseNullToBool}}"/>
+                    <Button Content="Modifier Sélection" Command="{Binding EditUserCommand}" Style="{StaticResource ActionButton}" Background="#64748B" Margin="0,15,0,0" Height="36"
+                            IsEnabled="{Binding IsSaving, Converter={StaticResource InverseBool}}"/>
+                    <Button Content="Supprimer" Command="{Binding DeleteUserCommand}" Style="{StaticResource ActionButton}" Background="#EF4444" Margin="0,10,0,0" Height="36"/>
                 </StackPanel>
             </ScrollViewer>
         </Border>
