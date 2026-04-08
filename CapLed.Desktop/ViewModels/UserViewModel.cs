@@ -52,6 +52,7 @@ public class UserViewModel : BaseViewModel
     public ICommand EditUserCommand { get; }
     public ICommand SaveUserCommand { get; }
     public ICommand DeleteUserCommand { get; }
+    public ICommand DeleteUserByRowCommand { get; }
     public ICommand ClearFormCommand { get; }
 
     // ─── Constructor ─────────────────────────────────────────────────────────
@@ -65,6 +66,7 @@ public class UserViewModel : BaseViewModel
         EditUserCommand = new RelayCommand(PrepareForEdit, () => SelectedUser != null);
         SaveUserCommand = new AsyncRelayCommand(SaveUserAsync, () => !IsSaving);
         DeleteUserCommand = new AsyncRelayCommand(DeleteUserAsync, () => SelectedUser != null && !IsSaving);
+        DeleteUserByRowCommand = new AsyncRelayCommand(async (param) => await DeleteUserByRowAsync(param as UserModel), _ => !IsSaving);
         ClearFormCommand = new RelayCommand(ClearForm);
     }
 
@@ -185,6 +187,13 @@ public class UserViewModel : BaseViewModel
         {
             EndSave();
         }
+    }
+
+    private async Task DeleteUserByRowAsync(UserModel? user)
+    {
+        if (user == null) return;
+        SelectedUser = user;
+        await DeleteUserAsync();
     }
 
     private async Task DeleteUserAsync()

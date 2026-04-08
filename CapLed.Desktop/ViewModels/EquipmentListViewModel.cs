@@ -10,11 +10,13 @@ public class EquipmentListViewModel : BaseViewModel
 {
     private readonly EquipmentService _equipmentService;
     private readonly CategoryService _categoryService;
+    private readonly FamilleService _familleService;
     private readonly IConfirmationService _confirmationService;
 
     // ─── Collections ─────────────────────────────────────────────────────────
     public ObservableCollection<EquipmentListItemModel> EquipmentItems { get; } = new();
     public ObservableCollection<CategoryModel> Categories { get; } = new();
+    public ObservableCollection<FamilleModel> Familles { get; } = new();
 
     // ─── Selection & Filters ──────────────────────────────────────────────────
     private EquipmentListItemModel? _selectedEquipment;
@@ -29,6 +31,21 @@ public class EquipmentListViewModel : BaseViewModel
     {
         get => _searchText;
         set => SetProperty(ref _searchText, value);
+    }
+
+    private FamilleModel? _selectedFamille;
+    public FamilleModel? SelectedFamille
+    {
+        get => _selectedFamille;
+        set
+        {
+            if (SetProperty(ref _selectedFamille, value))
+            {
+                // Optionally clear category when famille changes
+                SelectedCategory = null;
+                // Auto-refresh could be triggering here, but we bind 'RefreshCommand' to the combo box usually, or just let users click button
+            }
+        }
     }
 
     private CategoryModel? _selectedCategory;
@@ -89,10 +106,11 @@ public class EquipmentListViewModel : BaseViewModel
     // ─── Navigation Support ───────────────────────────────────────────────────
     public Func<int?, Task>? NavigateToDetailRequested { get; set; }
 
-    public EquipmentListViewModel(EquipmentService equipmentService, CategoryService categoryService, IConfirmationService confirmationService)
+    public EquipmentListViewModel(EquipmentService equipmentService, CategoryService categoryService, FamilleService familleService, IConfirmationService confirmationService)
     {
         _equipmentService = equipmentService;
         _categoryService = categoryService;
+        _familleService = familleService;
         _confirmationService = confirmationService;
 
         _selectedCondition = ConditionOptions[0]; // "Tous"
@@ -111,8 +129,26 @@ public class EquipmentListViewModel : BaseViewModel
 
     public async Task InitializeAsync()
     {
+        await LoadFamillesAsync();
         await LoadCategoriesAsync();
         await LoadEquipmentAsync();
+    }
+
+    private async Task LoadFamillesAsync()
+    {
+        try
+        {
+            var fams = await _familleService.GetAllAsync();
+            Familles.Clear();
+            if (fams != null)
+            {
+                foreach (var f in fams) Familles.Add(f);
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Impossible de charger les familles : " + ex.Message;
+        }
     }
 
     private async Task LoadCategoriesAsync()
@@ -138,6 +174,7 @@ public class EquipmentListViewModel : BaseViewModel
             string? conditionParam = SelectedCondition == "Tous" ? null : SelectedCondition;
             
             var result = await _equipmentService.GetAllAsync(
+                familleId: SelectedFamille?.Id,
                 categoryId: SelectedCategory?.Id,
                 condition: conditionParam,
                 search: SearchText,
@@ -167,6 +204,7 @@ public class EquipmentListViewModel : BaseViewModel
     private async Task ClearFiltersAsync()
     {
         SearchText = null;
+        SelectedFamille = null;
         SelectedCategory = null;
         SelectedCondition = ConditionOptions[0];
         Page = 1;

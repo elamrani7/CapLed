@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   database:
     image: mysql:8.0
@@ -23,6 +21,8 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Server=database;Database=capled_stock;Uid=root;Pwd=root;
       - Logging__LogLevel__Default=Information
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
 
 volumes:
   capledproject_mysql_data:

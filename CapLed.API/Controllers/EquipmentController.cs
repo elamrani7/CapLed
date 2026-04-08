@@ -29,6 +29,7 @@ public class EquipmentController : ControllerBase
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<PagedResultDto<EquipmentListItemDto>>> GetAll(
+        [FromQuery] int? familleId,
         [FromQuery] int? categoryId, 
         [FromQuery] EquipmentCondition? condition,
         [FromQuery] string? search,
@@ -36,7 +37,7 @@ public class EquipmentController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var (entities, totalCount) = await _equipmentRepository.GetAllAsync(
-            categoryId, condition, isPublished: null, search, page, pageSize);
+            familleId, categoryId, condition, isPublished: null, search, page, pageSize);
         
         var dtos = _mapper.Map<IEnumerable<EquipmentListItemDto>>(entities);
         

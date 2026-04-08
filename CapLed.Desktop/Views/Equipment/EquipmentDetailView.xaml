@@ -76,6 +76,13 @@
                     <StackPanel>
                         <TextBlock Text="CONFIGURATION &amp; ÉTAT" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,15"/>
 
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <CheckBox Content="Rendre public" IsChecked="{Binding IsPublished}" Foreground="#1A2436" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            <CheckBox Content="Visible sur le site" IsChecked="{Binding VisibleSite}" Foreground="#475569" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            <TextBlock Text="Prix de Vente (HT) : " Foreground="#475569" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBox Text="{Binding PrixVente, UpdateSourceTrigger=PropertyChanged}" Width="100" Height="30" Padding="8,0" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -97,21 +104,45 @@
                                 <TextBlock Text="État actuel *" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
                                 <ComboBox ItemsSource="{Binding ConditionOptions}"
                                           SelectedItem="{Binding SelectedCondition}"
-                                          Height="36">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Converter={StaticResource EnumToString}}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+                                          Height="36"/>
                             </StackPanel>
                         </Grid>
 
                         <StackPanel Margin="0,15,0,0">
+                            <TextBlock Text="Détails de l'état (Si Occasion/Reconditionné)" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBox Grid.Column="0" Text="{Binding EtatDetail.GradeVisuel}" ToolTip="Grade Visuel (A, B, C...)" Height="30" Padding="8,0"/>
+                                <TextBox Grid.Column="2" Text="{Binding EtatDetail.PannesObservees}" ToolTip="Pannes observées / test" Height="30" Padding="8,0"/>
+                                <TextBox Grid.Column="4" Text="{Binding EtatDetail.GarantieOfferte}" ToolTip="Garantie (en mois)" Height="30" Padding="8,0"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,15,0,0">
                             <TextBlock Text="Description technique" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
                             <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" 
-                                     Height="100" TextWrapping="Wrap" AcceptsReturn="True" Padding="8" VerticalContentAlignment="Top"/>
+                                     Height="60" TextWrapping="Wrap" AcceptsReturn="True" Padding="8" VerticalContentAlignment="Top"/>
                         </StackPanel>
+
+                        <!-- Spécifications Dynamiques (EAV) -->
+                        <StackPanel Margin="0,15,0,0">
+                            <TextBlock Text="Spécifications techniques spécifiques (EAV)" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                            <DataGrid ItemsSource="{Binding ChampsSpecifiques}" AutoGenerateColumns="False" HeadersVisibility="Column" SelectionMode="Single" Height="150">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Champ" Binding="{Binding NomChamp}" IsReadOnly="True" Width="200"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding TypeDonnee}" IsReadOnly="True" Width="100"/>
+                                    <DataGridTextColumn Header="Valeur" Binding="{Binding Valeur, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+
                     </StackPanel>
                 </Border>
 

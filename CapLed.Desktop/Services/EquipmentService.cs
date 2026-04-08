@@ -15,6 +15,7 @@ public class EquipmentService : ApiClientBase
     /// GET api/v1/Equipment?categoryId=&condition=&search=&page=&pageSize=
     /// </summary>
     public async Task<PagedResult<EquipmentListItemModel>> GetAllAsync(
+        int? familleId = null,
         int? categoryId = null,
         string? condition = null,
         string? search = null,
@@ -22,6 +23,7 @@ public class EquipmentService : ApiClientBase
         int pageSize = 20)
     {
         var query = BuildQuery(
+            ("familleId", familleId?.ToString()),
             ("categoryId", categoryId?.ToString()),
             ("condition", condition),
             ("search", search),

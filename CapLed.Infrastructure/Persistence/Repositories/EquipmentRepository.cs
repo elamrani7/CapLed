@@ -20,10 +20,14 @@ public class EquipmentRepository : IEquipmentRepository
         return await _context.Equipments
             .Include(e => e.Category)
             .Include(e => e.Photos)
+            .Include(e => e.ChampsSpecifiques)
+                .ThenInclude(v => v.ChampSpecifique)
+            .Include(e => e.EtatDetail)
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 
     public async Task<(IEnumerable<Equipment> Items, int TotalCount)> GetAllAsync(
+        int? familleId = null,
         int? categoryId = null, 
         EquipmentCondition? condition = null, 
         bool? isPublished = null,
@@ -35,6 +39,9 @@ public class EquipmentRepository : IEquipmentRepository
             .Include(e => e.Category)
             .Include(e => e.Photos)
             .AsQueryable();
+
+        if (familleId.HasValue)
+            query = query.Where(e => e.Category.FamilleId == familleId.Value);
 
         if (categoryId.HasValue)
             query = query.Where(e => e.CategoryId == categoryId.Value);
@@ -88,6 +95,73 @@ public class EquipmentRepository : IEquipmentRepository
     public async Task<bool> ExistsAsync(string reference)
     {
         return await _context.Equipments.AnyAsync(e => e.Reference == reference);
+    }
+
+    public async Task<(IEnumerable<Equipment> Items, int TotalCount)> SearchPublicAsync(StockManager.Core.Application.DTOs.Catalogue.CatalogueFilterDto filters)
+    {
+        var query = _context.Equipments
+            .AsNoTracking()
+            .Include(e => e.Category)
+                .ThenInclude(c => c.Famille)
+            .Include(e => e.Photos)
+            .Include(e => e.ChampsSpecifiques)
+                .ThenInclude(v => v.ChampSpecifique)
+            .Include(e => e.EtatDetail)
+            .Where(e => e.IsPublished && e.VisibleSite);
+
+        if (!string.IsNullOrWhiteSpace(filters.Search))
+        {
+            var s = filters.Search.ToLower();
+            query = query.Where(e => e.Name.ToLower().Contains(s) || 
+                                     e.Reference.ToLower().Contains(s) ||
+                                     (e.Description != null && e.Description.ToLower().Contains(s)));
+        }
+
+        if (filters.FamilleId.HasValue)
+            query = query.Where(e => e.Category.FamilleId == filters.FamilleId.Value);
+
+        if (filters.CategorieId.HasValue)
+            query = query.Where(e => e.CategoryId == filters.CategorieId.Value);
+
+        if (!string.IsNullOrWhiteSpace(filters.Condition))
+        {
+            if (Enum.TryParse<StockManager.Core.Domain.Enums.EquipmentCondition>(filters.Condition, true, out var conditionEnum))
+            {
+                query = query.Where(e => e.Condition == conditionEnum);
+            }
+        }
+
+        if (filters.PrixMin.HasValue)
+            query = query.Where(e => e.PrixVente >= filters.PrixMin.Value);
+
+        if (filters.PrixMax.HasValue)
+            query = query.Where(e => e.PrixVente <= filters.PrixMax.Value);
+
+        if (!string.IsNullOrWhiteSpace(filters.Disponibilite))
+            query = query.Where(e => e.DisponibiliteSite == filters.Disponibilite);
+
+        // Dynamic Specs (EAV) filtering
+        if (filters.DynamicSpecs != null && filters.DynamicSpecs.Any())
+        {
+            foreach (var spec in filters.DynamicSpecs)
+            {
+                var specValue = spec.Value.ToLower();
+                query = query.Where(e => e.ChampsSpecifiques.Any(v => 
+                    v.ChampSpecifique.NomChamp == spec.Key && 
+                    v.Valeur != null && 
+                    v.Valeur.ToLower().Contains(specValue)));
+            }
+        }
+
+        var totalCount = await query.CountAsync();
+        
+        var items = await query
+            .OrderByDescending(e => e.CreatedAt)
+            .Skip((filters.Page - 1) * filters.PageSize)
+            .Take(filters.PageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 }
 

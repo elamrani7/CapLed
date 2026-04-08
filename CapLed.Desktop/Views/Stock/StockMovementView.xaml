@@ -217,11 +217,21 @@
             </Border.Style>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,10,0">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                        <TextBlock Text="✨" Visibility="{Binding IsEditMode, Converter={StaticResource InverseBool}, ConverterParameter=Collapsed}"/>
-                        <TextBlock Text="✏️" Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}"/>
-                        <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold" Foreground="#1E293B" Margin="8,0,0,0"/>
-                    </StackPanel>
+                    <DockPanel Margin="0,0,0,20">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="✨" Visibility="{Binding IsEditMode, Converter={StaticResource InverseBool}, ConverterParameter=Collapsed}"/>
+                            <TextBlock Text="✏️" Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}"/>
+                            <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold" Foreground="#1E293B" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <Button Content="+ Nouveau" 
+                                Command="{Binding CancelEditCommand}"
+                                DockPanel.Dock="Right"
+                                HorizontalAlignment="Right"
+                                Height="30" Padding="10,0"
+                                Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}"
+                                Style="{StaticResource ActionButton}"
+                                Background="#0F766E" ToolTip="Créer un nouveau mouvement (annule l'édition en cours)"/>
+                    </DockPanel>
 
                     <!-- Feedback Messages -->
                     <Border Style="{StaticResource ErrorMessageStyle}"

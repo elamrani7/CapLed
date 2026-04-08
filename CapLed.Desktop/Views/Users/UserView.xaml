@@ -46,6 +46,16 @@
                         <DataGridTextColumn Header="NOM COMPLET" Binding="{Binding FullName}" Width="*" FontWeight="SemiBold"/>
                         <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="*"/>
                         <DataGridTextColumn Header="RÔLE" Binding="{Binding DisplayRole}" Width="150"/>
+                        <DataGridTemplateColumn Width="50">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="🗑️" 
+                                            Command="{Binding DataContext.DeleteUserByRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent" BorderThickness="0" Foreground="#EF4444" FontSize="16" Cursor="Hand" ToolTip="Supprimer cet utilisateur"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>

@@ -1,0 +1,70 @@
+<UserControl x:Class="CapLed.Desktop.Views.CRM.DocumentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+             Background="White">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Documents Commerciaux" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <Button Content="🔄 Rafraîchir" Command="{Binding LoadDocumentsCommand}" Width="100" HorizontalAlignment="Right" Padding="5"/>
+        </DockPanel>
+
+        <TextBlock Grid.Row="1" Text="Bons de Commande" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        
+        <DataGrid Grid.Row="2" ItemsSource="{Binding BonsCommande}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" SelectionMode="Single" Margin="0,0,0,20">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Numéro BC" Binding="{Binding Numero}" Width="150" FontWeight="Bold"/>
+                <DataGridTextColumn Header="Date" Binding="{Binding DateCreation, StringFormat={}{0:dd/MM/yyyy}}" Width="100"/>
+                <DataGridTextColumn Header="Client" Binding="{Binding Client.RaisonSociale}" Width="200"/>
+                <DataGridTextColumn Header="Montant" Binding="{Binding MontantTotal, StringFormat={}{0:C}}" Width="120"/>
+                <DataGridTextColumn Header="Statut" Binding="{Binding Statut}" Width="120"/>
+
+                <DataGridTemplateColumn Header="Actions" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="📥 Télécharger PDF" 
+                                        Command="{Binding DataContext.DownloadBcPdfCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"
+                                        Margin="0,0,5,0" Padding="10,2" Background="#3B82F6" Foreground="White" BorderThickness="0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="3" Text="Bons de Livraison" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+        <DataGrid Grid.Row="4" ItemsSource="{Binding BonsLivraison}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Numéro BL" Binding="{Binding Numero}" Width="150" FontWeight="Bold"/>
+                <DataGridTextColumn Header="Date" Binding="{Binding DateLivraison, StringFormat={}{0:dd/MM/yyyy}}" Width="100"/>
+                <DataGridTextColumn Header="BC Associé" Binding="{Binding BonCommande.Numero}" Width="150"/>
+                <DataGridTextColumn Header="Statut" Binding="{Binding StatutLivraison}" Width="120"/>
+
+                <DataGridTemplateColumn Header="Actions" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="📥 Télécharger PDF" 
+                                        Command="{Binding DataContext.DownloadBlPdfCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"
+                                        Margin="0,0,5,0" Padding="10,2" Background="#8B5CF6" Foreground="White" BorderThickness="0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+</UserControl>

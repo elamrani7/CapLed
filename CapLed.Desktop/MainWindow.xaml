@@ -1,4 +1,4 @@
-﻿<Window x:Class="CapLed.Desktop.MainWindow"
+<Window x:Class="CapLed.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:CapLed.Desktop.ViewModels"
@@ -11,6 +11,8 @@
         xmlns:alerts="clr-namespace:CapLed.Desktop.Views.Alerts"
         xmlns:users="clr-namespace:CapLed.Desktop.Views.Users"
         xmlns:login="clr-namespace:CapLed.Desktop.Views.Login"
+        xmlns:crm="clr-namespace:CapLed.Desktop.Views.CRM"
+        xmlns:crmvm="clr-namespace:CapLed.Desktop.ViewModels.CRM"
         Title="CapLed — Gestion de Stock"
         MinWidth="1100" MinHeight="680"
         Width="1280" Height="780"
@@ -39,6 +41,13 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AlertsViewModel}">
             <alerts:AlertsView/>
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type crmvm:LeadsViewModel}">
+            <crm:LeadsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type crmvm:DocumentsViewModel}">
+            <crm:DocumentsView/>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:UserViewModel}">
@@ -222,6 +231,44 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="📦" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBlock Text="Mouvements"      VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- CRM / Ventes -->
+                    <Button Command="{Binding ShowLeadsCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActiveSection}" Value="Ventes / CRM">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🤝" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Ventes (CRM)"    VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Documents -->
+                    <Button Command="{Binding ShowDocumentsCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActiveSection}" Value="Documents">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📄" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Documents"       VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 

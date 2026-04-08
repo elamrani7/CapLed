@@ -61,6 +61,36 @@ public class EquipmentDetailViewModel : BaseViewModel
         get => _quantity;
         set => SetProperty(ref _quantity, value);
     }
+    
+    private bool _visibleSite;
+    public bool VisibleSite
+    {
+        get => _visibleSite;
+        set => SetProperty(ref _visibleSite, value);
+    }
+
+    private bool _isPublished;
+    public bool IsPublished
+    {
+        get => _isPublished;
+        set => SetProperty(ref _isPublished, value);
+    }
+
+    private decimal? _prixVente;
+    public decimal? PrixVente
+    {
+        get => _prixVente;
+        set => SetProperty(ref _prixVente, value);
+    }
+
+    private ArticleEtatDetailModel _etatDetail = new();
+    public ArticleEtatDetailModel EtatDetail
+    {
+        get => _etatDetail;
+        set => SetProperty(ref _etatDetail, value);
+    }
+
+    public ObservableCollection<ArticleChampValeurModel> ChampsSpecifiques { get; } = new();
 
     private CategoryModel? _selectedCategory;
     public CategoryModel? SelectedCategory
@@ -70,7 +100,7 @@ public class EquipmentDetailViewModel : BaseViewModel
     }
 
     public ObservableCollection<CategoryModel> Categories { get; } = new();
-    public List<string> ConditionOptions { get; } = new() { "NEW", "USED", "DAMAGED", "REPAIRING" };
+    public List<string> ConditionOptions { get; } = new() { "NEUF", "OCCASION", "RECONDITIONNE" };
 
     public string Title => IsEditMode ? "Modifier l'Équipement" : "Nouvel Équipement";
 
@@ -117,10 +147,21 @@ public class EquipmentDetailViewModel : BaseViewModel
                     
                     // Case-insensitive match for the condition string from API
                     var match = ConditionOptions.FirstOrDefault(o => o.Equals(equipment.Condition, StringComparison.OrdinalIgnoreCase));
-                    SelectedCondition = match ?? "NEW";
+                    SelectedCondition = match ?? "NEUF";
 
                     Quantity = equipment.Quantity;
+                    VisibleSite = equipment.VisibleSite;
+                    IsPublished = equipment.IsPublished;
+                    PrixVente = equipment.PrixVente;
+                    EtatDetail = equipment.EtatDetail ?? new ArticleEtatDetailModel();
                     SelectedCategory = Categories.FirstOrDefault(c => c.Id == equipment.CategoryId);
+
+                    ChampsSpecifiques.Clear();
+                    if (equipment.ChampsSpecifiques != null)
+                    {
+                        foreach(var champ in equipment.ChampsSpecifiques)
+                            ChampsSpecifiques.Add(champ);
+                    }
                 }
                 else
                 {
@@ -133,8 +174,13 @@ public class EquipmentDetailViewModel : BaseViewModel
                 Name = string.Empty;
                 Reference = string.Empty;
                 Description = string.Empty;
-                SelectedCondition = "NEW";
+                SelectedCondition = "NEUF";
                 Quantity = 0;
+                VisibleSite = false;
+                IsPublished = false;
+                PrixVente = null;
+                EtatDetail = new ArticleEtatDetailModel();
+                ChampsSpecifiques.Clear();
                 SelectedCategory = null;
             }
         }
@@ -169,7 +215,13 @@ public class EquipmentDetailViewModel : BaseViewModel
                 Reference = Reference,
                 Description = Description,
                 Condition = SelectedCondition,
-                CategoryId = SelectedCategory!.Id
+                CategoryId = SelectedCategory!.Id,
+                VisibleSite = VisibleSite,
+                IsPublished = IsPublished,
+                PrixVente = PrixVente,
+                MinThreshold = 2, // Default or add a field
+                EtatDetail = EtatDetail,
+                ChampsSpecifiques = ChampsSpecifiques.ToList()
             };
 
             bool success;

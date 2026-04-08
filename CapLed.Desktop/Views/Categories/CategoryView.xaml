@@ -59,9 +59,25 @@
                               RowStyle="{StaticResource FlatDataGridRowStyle}"
                               Margin="0,0,0,10">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
-                            <DataGridTextColumn Header="LIBELLÉ" Binding="{Binding Label}" Width="200"/>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                            <DataGridTextColumn Header="FAMILLE" Binding="{Binding FamilleLibelle}" Width="130"/>
+                            <DataGridTextColumn Header="LIBELLÉ" Binding="{Binding Label}" Width="180"/>
+                            <DataGridTextColumn Header="GESTION" Binding="{Binding TypeGestionStock}" Width="90"/>
                             <DataGridTextColumn Header="DESCRIPTION" Binding="{Binding Description}" Width="*"/>
+                            <!-- Delete button column -->
+                            <DataGridTemplateColumn Header="" Width="40">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="🗑️"
+                                                Command="{Binding DataContext.DeleteCategoryCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Supprimer cette catégorie"
+                                                Style="{StaticResource DataGridIconButton}"
+                                                Foreground="#DC2626"
+                                                Width="28" Height="28" Margin="2"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -84,11 +100,136 @@
                             <TextBlock Text="{Binding SuccessMessage}"/>
                         </Border>
 
+                        <!-- Famille Parente + bouton Ajouter -->
+                        <TextBlock Text="Famille Parente" FontWeight="Medium" Margin="0,0,0,6" Foreground="#475569"/>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding Familles}" 
+                                      SelectedValuePath="Id"
+                                      SelectedValue="{Binding SelectedFamilleId, UpdateSourceTrigger=PropertyChanged}"
+                                      DisplayMemberPath="Libelle"
+                                      Height="38" Margin="0,0,6,0"/>
+                            <Button Grid.Column="1"
+                                    Content="+"
+                                    ToolTip="Ajouter une nouvelle famille"
+                                    Command="{Binding ToggleAddFamilleCommand}"
+                                    Width="38" Height="38"
+                                    FontSize="18" FontWeight="Bold"
+                                    Background="#0F766E" Foreground="White"
+                                    BorderThickness="0">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="#0F766E"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#0D9488"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding ShowAddFamillePanel}" Value="True">
+                                                            <Setter Property="Background" Value="#DC2626"/>
+                                                            <Setter Property="Content" Value="×"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </Grid>
+
+                        <!-- Inline Quick-Add Famille Panel -->
+                        <Border Visibility="{Binding ShowAddFamillePanel, Converter={StaticResource BoolToVis}}"
+                                Background="#F0FDF4" BorderBrush="#86EFAC" BorderThickness="1"
+                                CornerRadius="8" Padding="12" Margin="0,0,0,15">
+                            <StackPanel>
+                                <TextBlock Text="➕ Nouvelle famille" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="#15803D" Margin="0,0,0,8"/>
+                                <TextBox Text="{Binding NouvelleFamilleLibelle, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         Height="34"
+                                         x:Name="TbNouvelleLibelle"
+                                         Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="✓ Créer"
+                                            Command="{Binding SaveNewFamilleCommand}"
+                                            Height="32" Padding="12,0"
+                                            Background="#15803D" Foreground="White"
+                                            BorderThickness="0" Margin="0,0,8,0">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="#15803D"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#166534"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="Annuler"
+                                            Command="{Binding ToggleAddFamilleCommand}"
+                                            Height="32" Padding="12,0"
+                                            Background="Transparent" Foreground="#64748B"
+                                            BorderBrush="#CBD5E1" BorderThickness="1">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="#64748B"/>
+                                                <Setter Property="BorderBrush" Value="#CBD5E1"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Label -->
                         <TextBlock Text="Libellé *" FontWeight="Medium" Margin="0,0,0,8" Foreground="#475569"/>
                         <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" 
                                  Style="{StaticResource ModernTextBoxStyle}" 
                                  Margin="0,0,0,15"/>
+
+                        <!-- Type Gestion -->
+                        <TextBlock Text="Mode de Gestion Stock *" FontWeight="Medium" Margin="0,0,0,8" Foreground="#475569"/>
+                        <ComboBox ItemsSource="{Binding GestionStockTypes}" 
+                                  SelectedItem="{Binding TypeGestionStock, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,0,0,15" Height="38"/>
 
                         <!-- Description -->
                         <TextBlock Text="Description" FontWeight="Medium" Margin="0,0,0,8" Foreground="#475569"/>

@@ -19,6 +19,8 @@ public class MainViewModel : BaseViewModel
     private readonly AlertsViewModel _alertsVm;
     private readonly UserViewModel _userVm;
     private readonly LoginViewModel _loginVm;
+    private readonly CapLed.Desktop.ViewModels.CRM.LeadsViewModel _leadsVm;
+    private readonly CapLed.Desktop.ViewModels.CRM.DocumentsViewModel _documentsVm;
     private readonly IConfirmationService _confirmationService;
 
     // ─── Authentication State ─────────────────────────────────────────────────
@@ -49,6 +51,8 @@ public class MainViewModel : BaseViewModel
     public ICommand ShowStockCommand { get; }
     public ICommand ShowAlertsCommand { get; }
     public ICommand ShowUsersCommand { get; }
+    public ICommand ShowLeadsCommand { get; }
+    public ICommand ShowDocumentsCommand { get; }
     public ICommand LogoutCommand { get; }
 
     public MainViewModel(
@@ -60,6 +64,8 @@ public class MainViewModel : BaseViewModel
         StockMovementViewModel stockVm,
         AlertsViewModel alertsVm,
         UserViewModel userVm,
+        CapLed.Desktop.ViewModels.CRM.LeadsViewModel leadsVm,
+        CapLed.Desktop.ViewModels.CRM.DocumentsViewModel documentsVm,
         IConfirmationService confirmationService,
         Func<MainViewModel, LoginViewModel> loginVmFactory)
     {
@@ -71,6 +77,8 @@ public class MainViewModel : BaseViewModel
         _stockVm = stockVm;
         _alertsVm = alertsVm;
         _userVm = userVm;
+        _leadsVm = leadsVm;
+        _documentsVm = documentsVm;
         _confirmationService = confirmationService;
         
         // Use factory to avoid circular dependency
@@ -85,6 +93,8 @@ public class MainViewModel : BaseViewModel
         ShowStockCommand      = new RelayCommand(() => Navigate("Stock",      _stockVm));
         ShowAlertsCommand     = new RelayCommand(() => Navigate("Alerts",     _alertsVm));
         ShowUsersCommand      = new RelayCommand(() => Navigate("Users",      _userVm));
+        ShowLeadsCommand      = new RelayCommand(() => Navigate("Ventes / CRM", _leadsVm));
+        ShowDocumentsCommand  = new RelayCommand(() => Navigate("Documents",  _documentsVm));
         LogoutCommand         = new RelayCommand(ExecuteLogout);
 
         // Initial view
@@ -138,9 +148,11 @@ public class MainViewModel : BaseViewModel
 
         if (viewModel is EquipmentListViewModel eqVm) await eqVm.InitializeAsync();
         else if (viewModel is StockMovementViewModel svm) await svm.InitializeAsync();
-        else if (viewModel is CategoryViewModel cvm) await cvm.LoadCategoriesAsync();
+        else if (viewModel is CategoryViewModel cvm) await cvm.LoadDataAsync();
         else if (viewModel is AlertsViewModel avm) await avm.InitializeAsync();
         else if (viewModel is UserViewModel uvm) await uvm.InitializeAsync();
+        else if (viewModel is CapLed.Desktop.ViewModels.CRM.LeadsViewModel lvm) await lvm.LoadLeadsAsync();
+        else if (viewModel is CapLed.Desktop.ViewModels.CRM.DocumentsViewModel dvm) await dvm.LoadDocumentsAsync();
     }
 
     public async Task NavigateToEquipmentDetail(int? id = null)

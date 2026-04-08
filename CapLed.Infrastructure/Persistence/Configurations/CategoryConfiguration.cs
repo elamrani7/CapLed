@@ -20,6 +20,16 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(c => c.Description)
             .HasMaxLength(500);
 
+        // ── Step 1A: ERP columns ─────────────────────────────────────────────
+        // FamilleId property — FK relationship is configured in FamilleConfiguration.
+        builder.Property(c => c.FamilleId);
+
+        builder.Property(c => c.TypeGestionStock)
+            .IsRequired()
+            .HasMaxLength(20)
+            .HasDefaultValue("QUANTITE");
+        // ─────────────────────────────────────────────────────────────────────
+
         // Relationships
         builder.HasMany(c => c.Equipments)
             .WithOne(e => e.Category)
@@ -27,4 +37,3 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
-

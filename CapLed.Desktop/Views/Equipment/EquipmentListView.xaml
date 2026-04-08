@@ -48,6 +48,21 @@
                     </TextBox>
                 </StackPanel>
 
+                <!-- Famille -->
+                <StackPanel Margin="0,0,15,0">
+                    <TextBlock Text="Famille" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                    <ComboBox Width="180" Height="34" 
+                              ItemsSource="{Binding Familles}" 
+                              SelectedItem="{Binding SelectedFamille}"
+                              DisplayMemberPath="Libelle">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="5"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+                </StackPanel>
+
                 <!-- Category -->
                 <StackPanel Margin="0,0,15,0">
                     <TextBlock Text="Catégorie" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>

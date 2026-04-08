@@ -30,10 +30,14 @@ public partial class App : Application
         
         services.AddSingleton<EquipmentService>();
         services.AddSingleton<CategoryService>();
+        services.AddSingleton<FamilleService>();
         services.AddSingleton<StockService>();
         services.AddSingleton<AlertService>();
         services.AddSingleton<UserService>();
         services.AddSingleton<AuthService>();
+        
+        services.AddSingleton<CrmApiClient>();
+        services.AddSingleton<DocumentApiClient>();
 
         // ── ViewModels ──────────────────────────────────────────────────
         services.AddSingleton<MainViewModel>();
@@ -45,6 +49,9 @@ public partial class App : Application
         services.AddTransient<AlertsViewModel>();
         services.AddTransient<UserViewModel>();
         services.AddTransient<LoginViewModel>();
+        
+        services.AddTransient<CapLed.Desktop.ViewModels.CRM.LeadsViewModel>();
+        services.AddTransient<CapLed.Desktop.ViewModels.CRM.DocumentsViewModel>();
 
         // Factory to solve circular dependency
         services.AddSingleton<Func<MainViewModel, LoginViewModel>>(provider => 

@@ -1,68 +1,176 @@
+/* CapLed Custom Industrial Branding */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  --bs-primary: #0056A6;
+  --bs-secondary: #00AEEF;
+  --bs-success: #2ECC71;
+  --bs-warning: #FFB200;
+  --bs-danger: #D92B2B;
 }
 
 body {
-  margin: 0;
+  background-color: #f8f9fa;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+
+.text-primary {
+  color: var(--bs-primary) !important;
+}
+
+.btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.btn-primary:hover {
+  background-color: #004585;
+  border-color: #004585;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c1c1c1; 
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8; 
+}
+
+/* --- AUTO-DOC STRUCTURAL UX OVERHAUL --- */
+.autodoc-tier1 {
+  background-color: #1b2327;
+  padding: 15px 0;
+  color: #fff;
+}
+
+.autodoc-tier2 {
+  background-color: #243036;
+  border-bottom: 3px solid #ff7a00; /* Auto-doc sometimes uses orange accents */
+}
+
+/* 
+  Flex Search Wrapper 
+  Contains: Select (Left), Input (Center), Button (Right)
+*/
+.autodoc-search-container {
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  height: 48px;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+.autodoc-search-select {
+  width: 25%;
+  max-width: 250px;
+  border: none;
+  padding: 0 10px;
+  background-color: #f8f9fa;
+  border-right: 1px solid #ccc;
+  outline: none;
+  font-size: 0.95rem;
+  color: #333;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.autodoc-search-input {
+  flex-grow: 1;
+  border: none;
+  padding: 0 20px;
+  outline: none;
+  font-size: 1.05rem;
+  background-color: #ffffff;
+}
+
+.autodoc-search-input::placeholder {
+  color: #888;
+}
+
+.autodoc-search-btn {
+  background-color: #006cf0; /* Distinct crisp blue */
+  color: #fff;
+  font-weight: 700;
+  padding: 0 30px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autodoc-search-btn:hover {
+  background-color: #0056c1;
+}
+
+/* Tier 2 Nav Links */
+.autodoc-nav-list {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto; /* horizontally scrollable if too many */
+  scrollbar-width: none; /* Hide scrollbar Firefox */
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.autodoc-nav-list::-webkit-scrollbar {
+  display: none; /* Hide scrollbar Chrome/Safari */
+}
+
+.autodoc-nav-item {
+  position: relative;
+}
+
+.autodoc-nav-link {
+  color: #d1d5d8;
+  padding: 12px 25px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.autodoc-nav-link:hover {
+  color: #ffffff;
+  background-color: rgba(255,255,255,0.05);
+}
+
+.autodoc-card {
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+  border: 1px solid #e0e0e0;
+}
+
+.autodoc-card:hover {
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  z-index: 2;
+}
+
+/* Sidebar filtering style */
+.sidebar-filter-header {
+  font-size: 0.95rem;
+  font-weight: bold;
+  background: #f8f9fa;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+/* EAV Table cleaner look */
+.eav-table th {
+  background-color: #f1f3f5 !important;
+  width: 30%;
 }

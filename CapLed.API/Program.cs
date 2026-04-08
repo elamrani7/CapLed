@@ -1,8 +1,10 @@
 using StockManager.Infrastructure.Persistence;
 using StockManager.Infrastructure.Persistence.Repositories;
+using StockManager.Infrastructure.Services;
 using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Application.Interfaces.Services;
 using StockManager.Core.Application.Services;
+using StockManager.Core.Application.Services.Catalogue;
 using StockManager.Core.Application.Mapping;
 using StockManager.API.Middleware;
 using Microsoft.EntityFrameworkCore;
@@ -86,15 +88,54 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
 builder.Services.AddScoped<IStockMovementRepository, StockMovementRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IFamilleRepository, FamilleRepository>();
 builder.Services.AddScoped<IContactRequestRepository, ContactRequestRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IStockQuantiteRepository, StockQuantiteRepository>();
+builder.Services.AddScoped<IAlerteStockRepository, AlerteStockRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ILotRepository, LotRepository>();
+builder.Services.AddScoped<INumeroSerieRepository, NumeroSerieRepository>();
 
 // Register Services
 builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IStockServiceV2, StockServiceV2>();
+builder.Services.AddScoped<IStockServiceV3, StockServiceV3>();
+
+// Step 4A: Commercial services
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<ILeadRepository, LeadRepository>();
+builder.Services.AddScoped<ILeadService, LeadService>();
+
+// Step 4B: Orders & Deliveries
+builder.Services.AddScoped<IBonCommandeRepository, BonCommandeRepository>();
+builder.Services.AddScoped<IBonLivraisonRepository, BonLivraisonRepository>();
+builder.Services.AddScoped<IDocumentPdfService, DocumentPdfService>();
+builder.Services.AddScoped<IChampSpecifiqueRepository, ChampSpecifiqueRepository>();
+builder.Services.AddScoped<IArticleChampValeurRepository, ArticleChampValeurRepository>();
+builder.Services.AddScoped<IChampSpecifiqueService, ChampSpecifiqueService>();
+builder.Services.AddScoped<IArticleDynamicFieldService, ArticleDynamicFieldService>();
+builder.Services.AddScoped<IArticleEtatDetailRepository, ArticleEtatDetailRepository>();
+builder.Services.AddScoped<IArticleEtatDetailService, ArticleEtatDetailService>();
+builder.Services.AddScoped<ICataloguePublicService, CataloguePublicService>();
+
+// QuestPDF License
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
 
 var app = builder.Build();
 
@@ -148,7 +189,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Removed to prevent CORS / Network Error issues with self-signed SSL certs on local dev
+
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();

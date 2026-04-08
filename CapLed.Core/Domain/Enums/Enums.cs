@@ -5,16 +5,22 @@ namespace StockManager.Core.Domain.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum EquipmentCondition
 {
-    NEW,
-    USED,
-    DAMAGED,
-    REPAIRING
+    NEUF,
+    OCCASION,
+    RECONDITIONNE,
+    EN_REPARATION,
+    ENDOMMAGE
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum UserRole
 {
     ADMIN,
+    COMMERCIAL,
+    TECHNICIEN,
+    /// <summary>Ancien rôle — conservé pour compatibilité descendante.
+    /// Les données existantes sont migrées vers TECHNICIEN via ErpPhase1_AddColumnsToExisting.</summary>
+    [Obsolete("Utiliser TECHNICIEN. Ce rôle sera supprimé en Phase 2.")]
     STOCK_MANAGER
 }
 
@@ -53,3 +59,11 @@ public static class StockAlertHelper
     }
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum SerialStatus
+{
+    DISPONIBLE,
+    SORTI,
+    RESERVE,
+    DEFECTUEUX
+}
