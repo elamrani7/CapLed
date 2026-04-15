@@ -35,6 +35,7 @@ public partial class App : Application
         services.AddSingleton<AlertService>();
         services.AddSingleton<UserService>();
         services.AddSingleton<AuthService>();
+        services.AddSingleton<StockDetailService>();
         
         services.AddSingleton<CrmApiClient>();
         services.AddSingleton<DocumentApiClient>();

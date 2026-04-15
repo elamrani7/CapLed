@@ -11,9 +11,13 @@ public class EquipmentListItemModel
     public string Reference { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
-    public string Condition { get; set; } = string.Empty;  // "NEW" or "USED"
+    public string Condition { get; set; } = string.Empty;
     public int Quantity { get; set; }
     public StockAlertLevel AlertLevel { get; set; }
+    // Champs ajoutés pour enrichir l'inventaire
+    public string TypeGestionStock { get; set; } = string.Empty; // QUANTITE / LOT / SERIALISE
+    public int MinThreshold { get; set; }
+    public decimal? PrixVente { get; set; }
 }
 
 /// <summary>
@@ -23,10 +27,10 @@ public class EquipmentDetailModel : EquipmentListItemModel
 {
     public string? Description { get; set; }
     public int CategoryId { get; set; } // Added to support selection in Edit form
-    public int MinThreshold { get; set; }
+    public new int MinThreshold { get; set; }
     public bool IsPublished { get; set; }
     public bool VisibleSite { get; set; }
-    public decimal? PrixVente { get; set; }
+    public new decimal? PrixVente { get; set; }
     
     // EAV & Status Details
     public ArticleEtatDetailModel? EtatDetail { get; set; }
@@ -78,5 +82,6 @@ public class PhotoModel
 {
     public int Id { get; set; }
     public string Url { get; set; } = string.Empty;
-    public bool IsMain { get; set; }
+    public string FullUrl => $"http://localhost:5000{Url}";
+    public bool IsPrimary { get; set; }
 }

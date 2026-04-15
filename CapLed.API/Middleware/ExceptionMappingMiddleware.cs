@@ -31,12 +31,12 @@ public class ExceptionMappingMiddleware
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
         var response = new
         {
-            error = "InternalServerError",
-            details = new[] { exception.Message }
+            error = exception.Message,
+            details = new[] { exception.StackTrace ?? string.Empty }
         };
 
         return context.Response.WriteAsync(JsonSerializer.Serialize(response));

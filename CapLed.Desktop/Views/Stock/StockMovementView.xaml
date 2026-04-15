@@ -148,6 +148,34 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
+                        <!-- Colonne Traçabilité : LOT ou N° Série -->
+                        <DataGridTemplateColumn Header="TRAÇABILITÉ" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="5,0">
+                                        <!-- Si NumeroLot renseigné -->
+                                        <Border CornerRadius="4" Padding="6,2" Margin="0,0,4,0"
+                                                Background="#EFF6FF"
+                                                Visibility="{Binding IsHistoricalLot, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Foreground="#1D4ED8" FontSize="11" FontWeight="SemiBold">
+                                                <Run Text="🏷️ "/>
+                                                <Run Text="{Binding HistoricalDisplayData, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </Border>
+                                        <!-- Si NumeroSeries renseigné -->
+                                        <Border CornerRadius="4" Padding="6,2"
+                                                Background="#F0FDF4"
+                                                Visibility="{Binding IsHistoricalSn, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Foreground="#15803D" FontSize="11" FontWeight="SemiBold">
+                                                <Run Text="🔢 "/>
+                                                <Run Text="{Binding HistoricalDisplayData, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </Border>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                         <DataGridTextColumn Header="UTILISATEUR" Binding="{Binding UserName}" Width="Auto">
                              <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
@@ -165,26 +193,6 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         
-                        <DataGridTemplateColumn Header="ACTIONS" Width="85">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" 
-                                                Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}">
-                                        <Button Content="✏️" 
-                                                Command="{Binding DataContext.EditMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                                CommandParameter="{Binding}"
-                                                ToolTip="Modifier"
-                                                Style="{StaticResource DataGridIconButton}" 
-                                                Margin="0,0,4,0"/>
-                                        <Button Content="🗑️" 
-                                                Command="{Binding DataContext.DeleteMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                                CommandParameter="{Binding}"
-                                                ToolTip="Supprimer"
-                                                Style="{StaticResource DataGridIconButton}"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
@@ -303,6 +311,27 @@
                     <StackPanel Margin="0,0,0,15">
                         <TextBlock Text="Quantité *" FontSize="12" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,0,6"/>
                         <TextBox Text="{Binding MovementQuantity, UpdateSourceTrigger=PropertyChanged}" Height="38" Padding="10,0" VerticalContentAlignment="Center" FontSize="15" FontWeight="Bold"/>
+                    </StackPanel>
+
+                    <!-- ─── CONDITIONAL: LOT MODE ─── -->
+                    <StackPanel Margin="0,0,0,15" Visibility="{Binding IsLotMode, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Numéro de Lot *" FontSize="12" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,0,6"/>
+                        <TextBox Text="{Binding NumeroLot, UpdateSourceTrigger=PropertyChanged}" Height="38" Padding="10,0" VerticalContentAlignment="Center" 
+                                 ToolTip="Référence d'identification du lot"/>
+                    </StackPanel>
+
+                    <!-- ─── CONDITIONAL: SERIALISE MODE ─── -->
+                    <StackPanel Margin="0,0,0,15" Visibility="{Binding IsSerialMode, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Numéros de Série *" FontSize="12" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,0,6"/>
+                        <ItemsControl ItemsSource="{Binding NumeroSeries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
+                                             Height="38" Padding="10,0" VerticalContentAlignment="Center" Margin="0,0,0,5"
+                                             ToolTip="Saisissez ou scannez un numéro de série (Scan Barcode)"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
 
                     <StackPanel Margin="0,0,0,15">

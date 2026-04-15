@@ -41,12 +41,7 @@ var serverVersion = new MySqlServerVersion(new Version(8, 0, 0));
 
 builder.Services.AddDbContext<StockManagementDbContext>(options =>
     options.UseMySql(connectionString, serverVersion,
-        b => b
-            .MigrationsAssembly("StockManager.Infrastructure")
-            .EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
-                errorNumbersToAdd: null)));
+        b => b.MigrationsAssembly("StockManager.Infrastructure")));
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -190,6 +185,20 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection(); // Removed to prevent CORS / Network Error issues with self-signed SSL certs on local dev
+
+// Ensure uploads directory exists
+var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "equipments");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
+    RequestPath = ""
+});
 
 app.UseCors("AllowAll");
 

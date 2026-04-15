@@ -47,7 +47,14 @@ public abstract class ApiClientBase
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<T>(JsonOptions);
+            try
+            {
+                return await response.Content.ReadFromJsonAsync<T>(JsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new ApiException($"Erreur lecture réponse JSON de {url}: {ex.Message}");
+            }
         }
 
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -69,7 +76,14 @@ public abstract class ApiClientBase
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions);
+            try
+            {
+                return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new ApiException($"Erreur lecture réponse JSON de {url}: {ex.Message}");
+            }
         }
 
         var error = await HandleErrorResponse(response, $"POST {url}");
@@ -88,8 +102,46 @@ public abstract class ApiClientBase
         throw new ApiException(error);
     }
 
+    /// <summary>HTTP POST pour l'upload de fichiers multiples (multipart/form-data).</summary>
+    protected async Task<TResponse> PostMultipartAsync<TResponse>(string url, IEnumerable<string> filePaths, string fileParamName = "files")
+    {
+        using var content = new MultipartFormDataContent();
+        
+        foreach (var filePath in filePaths)
+        {
+            var fileContent = new ByteArrayContent(await System.IO.File.ReadAllBytesAsync(filePath));
+            var mimeType = "image/jpeg";
+            var ext = System.IO.Path.GetExtension(filePath).ToLower();
+            if (ext == ".png") mimeType = "image/png";
+            else if (ext == ".gif") mimeType = "image/gif";
+            else if (ext == ".webp") mimeType = "image/webp";
+
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+            content.Add(fileContent, fileParamName, System.IO.Path.GetFileName(filePath));
+        }
+
+        var response = await Http.PostAsync(url, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<TResponse>(json, JsonOptions)!;
+        }
+
+        var error = await HandleErrorResponse(response, $"POST Multipart {url}");
+        throw new ApiException(error);
+    }
+
     protected async Task<string> HandleErrorResponse(HttpResponseMessage response, string context)
     {
+        string rawContent = string.Empty;
+        try
+        {
+            rawContent = await response.Content.ReadAsStringAsync();
+            System.Diagnostics.Debug.WriteLine($"API ERROR [{response.StatusCode}] {context}: {rawContent}");
+        }
+        catch { /* ignored */ }
+
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             return "Session expirée ou non autorisée. Veuillez vous reconnecter.";
@@ -100,16 +152,17 @@ public abstract class ApiClientBase
             return "Accès refusé. Vous n'avez pas les permissions nécessaires pour cette action.";
         }
 
-        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest && !string.IsNullOrWhiteSpace(rawContent))
         {
             try
             {
                 // Try to parse ASP.NET Core Validation Problem JSON
-                var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+                using var doc = JsonDocument.Parse(rawContent);
+                var problem = doc.RootElement;
+                
                 if (problem.TryGetProperty("errors", out var errors))
                 {
-                    // Check for both ASP.NET Core default errors and our custom { errors: { Error: [...] } }
-                    return $"{context} validation failed: {errors.ToString()}";
+                    return $"{context} validation failed: {errors}";
                 }
                 if (problem.TryGetProperty("detail", out var detail))
                 {
@@ -120,7 +173,11 @@ public abstract class ApiClientBase
                     return $"{context} failed: {error.GetString()}";
                 }
             }
-            catch { /* fallback to generic error */ }
+            catch 
+            { 
+                // Fallback: If it's BadRequest but not valid JSON, return the raw text if short
+                if (rawContent.Length < 200) return $"{context} failed: {rawContent}";
+            }
         }
 
         return $"{context} failed: {response.ReasonPhrase} ({(int)response.StatusCode})";

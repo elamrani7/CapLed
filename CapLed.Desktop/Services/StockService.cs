@@ -16,19 +16,24 @@ public class StockService : ApiClientBase
 {
     public StockService(HttpClient httpClient) : base(httpClient) { }
 
-    /// <summary>POST api/v1/Stock/entry — record a stock entry (restock).</summary>
-    public async Task<StockMovementModel?> RecordEntryAsync(StockMovementCreateModel model)
+    /// <summary>POST api/v2/Mouvements — record a stock entry (restock).</summary>
+    public async Task<bool> RecordEntryAsync(StockMovementCreateModel model)
     {
-        // Force type to ENTRY
-        model.Type = "ENTRY";
-        return await PostAsync<StockMovementCreateModel, StockMovementModel>("api/v1/Stock/entry", model);
+        model.TypeMouvement = "ENTREE";
+        // Defaulting to DepotDestinationId = 1 if none provided for now (Main Depot)
+        if (!model.DepotDestinationId.HasValue) model.DepotDestinationId = 1;
+        
+        return await PostAsync<StockMovementCreateModel>("api/v2/mouvements", model);
     }
 
-    /// <summary>POST api/v1/Stock/exit — record a stock exit (dispatch).</summary>
-    public async Task<StockMovementModel?> RecordExitAsync(StockMovementCreateModel model)
+    /// <summary>POST api/v2/Mouvements — record a stock exit (dispatch).</summary>
+    public async Task<bool> RecordExitAsync(StockMovementCreateModel model)
     {
-        model.Type = "EXIT";
-        return await PostAsync<StockMovementCreateModel, StockMovementModel>("api/v1/Stock/exit", model);
+        model.TypeMouvement = "SORTIE";
+        // Defaulting to DepotSourceId = 1 if none provided
+        if (!model.DepotSourceId.HasValue) model.DepotSourceId = 1;
+
+        return await PostAsync<StockMovementCreateModel>("api/v2/mouvements", model);
     }
 
     /// <summary>GET api/v1/Stock/level/{equipmentId} — current stock quantity.</summary>

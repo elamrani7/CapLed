@@ -23,7 +23,10 @@ services:
       - Logging__LogLevel__Default=Information
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
+    volumes:
+      - capledproject_images:/app/wwwroot/images
 
 volumes:
   capledproject_mysql_data:
     external: true
+  capledproject_images:

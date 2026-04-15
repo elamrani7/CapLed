@@ -24,6 +24,10 @@ public class StockMovement
 
     /// <summary>Numéro de série concerné (mode SERIALISE, 1 ligne = 1 unité). FK → NUMERO_SERIE(Id).</summary>
     public int? NumeroSerieId { get; set; }
+
+    /// <summary>Traceabilité textuelle stockée dans l'historique ("LOT: 123", "SN: A, B")</summary>
+    [System.ComponentModel.DataAnnotations.MaxLength(1000)]
+    public string? TraceabiliteInfo { get; set; }
     // ─────────────────────────────────────────────────────────────────────────
 
     // Navigation Properties (legacy)

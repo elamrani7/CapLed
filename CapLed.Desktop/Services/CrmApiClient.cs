@@ -18,7 +18,8 @@ public class CrmApiClient : ApiClientBase
         if (!string.IsNullOrEmpty(search)) url += $"&search={search}";
         if (!string.IsNullOrEmpty(statut)) url += $"&statut={statut}";
 
-        return await GetAsync<PagedResult<LeadModel>>(url);
+        var result = await GetAsync<PagedResult<LeadModel>>(url);
+        return result ?? new PagedResult<LeadModel>();
     }
 
     public async Task UpdateLeadStatusAsync(int leadId, string statut)

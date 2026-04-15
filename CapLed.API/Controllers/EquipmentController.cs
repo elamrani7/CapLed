@@ -99,4 +99,100 @@ public class EquipmentController : ControllerBase
         await _equipmentRepository.DeleteAsync(id);
         return NoContent();
     }
+
+    /// <summary>
+    /// Upload images for an equipment item.
+    /// </summary>
+    [HttpPost("{id}/images")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadImages(int id, [FromForm] IFormFileCollection files)
+    {
+        var existing = await _equipmentRepository.GetByIdAsync(id);
+        if (existing == null) return NotFound("Article introuvable.");
+
+        if (files == null || files.Count == 0) return BadRequest("Aucun fichier reçu.");
+
+        var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "equipments");
+        bool isFirstPhoto = !existing.Photos.Any();
+
+        foreach (var file in files)
+        {
+            if (file.Length > 0)
+            {
+                var fileName = $"{Guid.NewGuid()}_{file.FileName.Replace(" ", "_")}";
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                existing.Photos.Add(new Photo
+                {
+                    EquipmentId = id,
+                    Url = $"/images/equipments/{fileName}",
+                    IsPrimary = isFirstPhoto
+                });
+                
+                isFirstPhoto = false;
+            }
+        }
+
+        await _equipmentRepository.UpdateAsync(existing);
+        
+        var readDto = _mapper.Map<EquipmentReadDto>(existing);
+        return Ok(readDto);
+    }
+
+    /// <summary>
+    /// Delete an image.
+    /// </summary>
+    [HttpDelete("{id}/images/{photoId}")]
+    public async Task<IActionResult> DeleteImage(int id, int photoId)
+    {
+        var existing = await _equipmentRepository.GetByIdAsync(id);
+        if (existing == null) return NotFound("Article introuvable.");
+
+        var photo = existing.Photos.FirstOrDefault(p => p.Id == photoId);
+        if (photo == null) return NotFound("Image introuvable.");
+
+        var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", photo.Url.TrimStart('/'));
+        if (System.IO.File.Exists(physicalPath))
+        {
+            System.IO.File.Delete(physicalPath);
+        }
+
+        existing.Photos.Remove(photo);
+        
+        if (photo.IsPrimary && existing.Photos.Any())
+        {
+            existing.Photos.First().IsPrimary = true;
+        }
+
+        await _equipmentRepository.UpdateAsync(existing);
+        var readDto = _mapper.Map<EquipmentReadDto>(existing);
+        return Ok(readDto);
+    }
+
+    /// <summary>
+    /// Set an image as primary.
+    /// </summary>
+    [HttpPut("{id}/images/{photoId}/primary")]
+    public async Task<IActionResult> SetPrimaryImage(int id, int photoId)
+    {
+        var existing = await _equipmentRepository.GetByIdAsync(id);
+        if (existing == null) return NotFound("Article introuvable.");
+
+        var photo = existing.Photos.FirstOrDefault(p => p.Id == photoId);
+        if (photo == null) return NotFound("Image introuvable.");
+
+        foreach (var p in existing.Photos)
+        {
+            p.IsPrimary = (p.Id == photoId);
+        }
+
+        await _equipmentRepository.UpdateAsync(existing);
+        var readDto = _mapper.Map<EquipmentReadDto>(existing);
+        return Ok(readDto);
+    }
 }

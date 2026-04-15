@@ -13,6 +13,7 @@ public class StockMovementReadDto
     public DateTime Date { get; set; }
     public string? Comment { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string? TraceabiliteInfo { get; set; }
 }
 
 public class StockMovementCreateDto

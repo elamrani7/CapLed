@@ -14,12 +14,14 @@ public class DocumentApiClient : ApiClientBase
 
     public async Task<PagedResult<BonCommandeModel>> GetBonsCommandeAsync(int page, int pageSize)
     {
-        return await GetAsync<PagedResult<BonCommandeModel>>($"v2/bons-commande?page={page}&pageSize={pageSize}");
+        var res = await GetAsync<PagedResult<BonCommandeModel>>($"v2/bons-commande?page={page}&pageSize={pageSize}");
+        return res ?? new PagedResult<BonCommandeModel>();
     }
 
     public async Task<PagedResult<BonLivraisonModel>> GetBonsLivraisonAsync(int page, int pageSize)
     {
-        return await GetAsync<PagedResult<BonLivraisonModel>>($"v2/bons-livraison?page={page}&pageSize={pageSize}");
+        var res = await GetAsync<PagedResult<BonLivraisonModel>>($"v2/bons-livraison?page={page}&pageSize={pageSize}");
+        return res ?? new PagedResult<BonLivraisonModel>();
     }
 
     public async Task<byte[]> DownloadDevisPdfAsync(int leadId)

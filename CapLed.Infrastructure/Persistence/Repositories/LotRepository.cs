@@ -17,6 +17,13 @@ public class LotRepository : ILotRepository
                 l.DepotId   == depotId   &&
                 l.NumeroLot == numeroLot);
 
+    public Task<List<Lot>> GetByArticleAsync(int articleId)
+        => _ctx.Lots
+            .Include(l => l.Depot)
+            .Where(l => l.ArticleId == articleId)
+            .OrderBy(l => l.DateEntree)
+            .ToListAsync();
+
     public async Task AddAsync(Lot lot)
         => await _ctx.Lots.AddAsync(lot);
 

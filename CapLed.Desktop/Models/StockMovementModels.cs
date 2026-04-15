@@ -9,22 +9,47 @@ public class StockMovementModel
     public int EquipmentId { get; set; }
     public string EquipmentName { get; set; } = string.Empty;
     public int Quantity { get; set; }
-    public string Type { get; set; } = "ENTRY"; // "ENTRY" or "EXIT"
+    public string Type { get; set; } = "ENTRY";
     public DateTime Date { get; set; }
     public string? Comment { get; set; }
     public string UserName { get; set; } = string.Empty;
+
+    // ── Traçabilité (Step 3) ──
+    public string? NumeroLot { get; set; }
+    public List<string>? NumeroSeries { get; set; }
+
+    public string? TraceabiliteInfo { get; set; }
+
+    // Helpers pour l'affichage WPF
+    public bool IsHistoricalLot => TraceabiliteInfo?.StartsWith("LOT:") == true;
+    public bool IsHistoricalSn => TraceabiliteInfo?.StartsWith("SN:") == true;
+    public string? HistoricalDisplayData => TraceabiliteInfo != null && TraceabiliteInfo.Length > 4 
+        ? TraceabiliteInfo.Substring(4).Trim() 
+        : null;
 }
 
 /// <summary>
-/// Mirrors StockMovementCreateDto — used for registering new movements.
+/// Mirrors CreateMouvementDto — used for registering new movements via api/v2/mouvements.
+/// Property names match the backend DTO exactly (camelCase handled by HttpClient JsonOptions).
 /// </summary>
 public class StockMovementCreateModel
 {
-    public int EquipmentId { get; set; }
-    public int Quantity { get; set; }
-    public string Type { get; set; } = "ENTRY";
-    public DateTime Date { get; set; } = DateTime.UtcNow;
-    public string? Comment { get; set; }
+    public int ArticleId { get; set; }
+    public int Quantite { get; set; }
+    public string TypeMouvement { get; set; } = "ENTREE";
+    public string? Remarks { get; set; }
+    public int? DepotSourceId { get; set; }
+    public int? DepotDestinationId { get; set; }
+
+    // ── Mode LOT ──
+    public string? NumeroLot { get; set; }
+    public DateTime? DateEntreeLot { get; set; }
+    public string? Fournisseur { get; set; }
+    public string? Garantie { get; set; }
+    public string? Certificat { get; set; }
+
+    // ── Mode SERIALISE ──
+    public List<string>? NumeroSeries { get; set; }
 }
 
 /// <summary>

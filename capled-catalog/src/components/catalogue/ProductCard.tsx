@@ -13,7 +13,7 @@ export const ProductCard = ({ product }: { product: any }) => {
       <div className="position-relative bg-white d-flex align-items-center justify-content-center overflow-hidden p-2" style={{ height: '140px', borderBottom: '1px solid #f0f0f0' }}>
         {product.urlImagePrincipale ? (
           <img 
-            src={product.urlImagePrincipale} 
+            src={`http://localhost:5000${product.urlImagePrincipale}`} 
             alt={product.nom} 
             className="w-100 h-100 object-fit-contain"
           />

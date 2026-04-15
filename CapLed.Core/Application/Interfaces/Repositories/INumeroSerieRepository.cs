@@ -6,6 +6,7 @@ public interface INumeroSerieRepository
 {
     Task<NumeroSerie?> GetBySerialAsync(string numeroSerie);
     Task<List<NumeroSerie>> GetBySerialListAsync(List<string> serials, int depotId);
+    Task<List<NumeroSerie>> GetByArticleAsync(int articleId);
     Task AddRangeAsync(IEnumerable<NumeroSerie> series);
     Task UpdateRangeAsync(IEnumerable<NumeroSerie> series);
 }

@@ -91,6 +91,7 @@ public class EquipmentDetailViewModel : BaseViewModel
     }
 
     public ObservableCollection<ArticleChampValeurModel> ChampsSpecifiques { get; } = new();
+    public ObservableCollection<PhotoModel> Photos { get; } = new();
 
     private CategoryModel? _selectedCategory;
     public CategoryModel? SelectedCategory
@@ -108,6 +109,10 @@ public class EquipmentDetailViewModel : BaseViewModel
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
 
+    public ICommand UploadImagesCommand { get; }
+    public ICommand DeleteImageCommand { get; }
+    public ICommand SetPrimaryImageCommand { get; }
+
     // ─── Navigation Support ───────────────────────────────────────────────────
     public Func<bool, Task>? NavigateToListRequested { get; set; }
 
@@ -120,6 +125,10 @@ public class EquipmentDetailViewModel : BaseViewModel
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
         CancelCommand = new AsyncRelayCommand(CancelAsync);
+
+        UploadImagesCommand = new AsyncRelayCommand(UploadImagesActionAsync, () => IsEditMode && !IsSaving);
+        DeleteImageCommand = new AsyncRelayCommand(DeleteImageActionAsync, (_) => !IsSaving);
+        SetPrimaryImageCommand = new AsyncRelayCommand(SetPrimaryImageActionAsync, (_) => !IsSaving);
     }
 
     /// <summary>
@@ -161,6 +170,12 @@ public class EquipmentDetailViewModel : BaseViewModel
                     {
                         foreach(var champ in equipment.ChampsSpecifiques)
                             ChampsSpecifiques.Add(champ);
+                    }
+
+                    Photos.Clear();
+                    if (equipment.Photos != null)
+                    {
+                        foreach(var p in equipment.Photos) Photos.Add(p);
                     }
                 }
                 else
@@ -279,5 +294,96 @@ public class EquipmentDetailViewModel : BaseViewModel
     private async Task CancelAsync()
     {
         if (NavigateToListRequested != null) await NavigateToListRequested.Invoke(false);
+    }
+
+    // ─── Image Management ───────────────────────────────────────────────────
+
+    private async Task UploadImagesActionAsync()
+    {
+        if (!Id.HasValue) return;
+
+        var openFileDialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Multiselect = true,
+            Filter = "Images (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp",
+            Title = "Sélectionner des images"
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            BeginSave();
+            try
+            {
+                var updatedEquipment = await _equipmentService.UploadImagesAsync(Id.Value, openFileDialog.FileNames);
+                RefreshPhotos(updatedEquipment.Photos);
+                SuccessMessage = "Images téléversées avec succès.";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Erreur lors de l'upload : " + ex.Message;
+            }
+            finally
+            {
+                EndSave();
+            }
+        }
+    }
+
+    private async Task DeleteImageActionAsync(object? parameter)
+    {
+        if (!Id.HasValue || parameter is not int photoId) return;
+        
+        BeginSave();
+        try
+        {
+            var success = await _equipmentService.DeleteImageAsync(Id.Value, photoId);
+            if (success)
+            {
+                var photoToRemove = Photos.FirstOrDefault(p => p.Id == photoId);
+                if (photoToRemove != null) Photos.Remove(photoToRemove);
+                SuccessMessage = "Image supprimée.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Erreur de suppression : " + ex.Message;
+        }
+        finally
+        {
+            EndSave();
+        }
+    }
+
+    private async Task SetPrimaryImageActionAsync(object? parameter)
+    {
+        if (!Id.HasValue || parameter is not int photoId) return;
+        
+        BeginSave();
+        try
+        {
+            var success = await _equipmentService.SetPrimaryImageAsync(Id.Value, photoId);
+            if (success)
+            {
+                foreach(var p in Photos) p.IsPrimary = (p.Id == photoId);
+                SuccessMessage = "Image principale mise à jour.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Erreur : " + ex.Message;
+        }
+        finally
+        {
+            EndSave();
+        }
+    }
+
+    private void RefreshPhotos(IEnumerable<PhotoModel>? updatedPhotos)
+    {
+        Photos.Clear();
+        if (updatedPhotos != null)
+        {
+            foreach (var p in updatedPhotos) Photos.Add(p);
+        }
     }
 }

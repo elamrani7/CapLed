@@ -94,25 +94,27 @@ public class StockServiceV3 : IStockServiceV3
                     {
                         lot = new Lot
                         {
-                            ArticleId  = dto.ArticleId,
-                            DepotId    = depotId,
-                            NumeroLot  = dto.NumeroLot,
-                            Quantite   = dto.Quantite,
+                            ArticleId   = dto.ArticleId,
+                            DepotId     = depotId,
+                            NumeroLot   = dto.NumeroLot,
+                            Quantite    = dto.Quantite,
                             Fournisseur = dto.Fournisseur,
-                            Garantie   = dto.Garantie,
-                            Certificat = dto.Certificat,
-                            DateEntree = dto.DateEntreeLot?.ToUniversalTime() ?? DateTime.UtcNow
+                            Garantie    = dto.Garantie,
+                            Certificat  = dto.Certificat,
+                            DateEntree  = dto.DateEntreeLot?.ToUniversalTime() ?? DateTime.UtcNow
                         };
                         await _lotRepo.AddAsync(lot);
+                        // Save immediately so MySQL assigns lot.Id before we use it as FK
+                        await _uow.SaveChangesAsync();
                     }
                     else
                     {
                         lot.Quantite += dto.Quantite;
                         await _lotRepo.UpdateAsync(lot);
                     }
-                    lotId = lot.Id;
+                    lotId = lot.Id; // Now Id is correctly assigned by the DB
 
-                    await AdjustStockQuantiteAsync(dto.ArticleId, depotId, dto.Quantite);
+                    await AdjustStockQuantiteAsync(dto.ArticleId, depotId, dto.Quantite, article.Quantity);
                     break;
                 }
 
@@ -131,12 +133,9 @@ public class StockServiceV3 : IStockServiceV3
                     lot.Quantite -= dto.Quantite;
                     lotId = lot.Id;
 
-                    if (lot.Quantite == 0)
-                        await _lotRepo.DeleteAsync(lot);
-                    else
-                        await _lotRepo.UpdateAsync(lot);
+                    await _lotRepo.UpdateAsync(lot);
 
-                    await AdjustStockQuantiteAsync(dto.ArticleId, depotId, -dto.Quantite);
+                    await AdjustStockQuantiteAsync(dto.ArticleId, depotId, -dto.Quantite, article.Quantity);
                     break;
                 }
 
@@ -154,10 +153,7 @@ public class StockServiceV3 : IStockServiceV3
                     srcLot.Quantite -= dto.Quantite;
                     lotId = srcLot.Id;
 
-                    if (srcLot.Quantite == 0)
-                        await _lotRepo.DeleteAsync(srcLot);
-                    else
-                        await _lotRepo.UpdateAsync(srcLot);
+                    await _lotRepo.UpdateAsync(srcLot);
 
                     // Merge or create lot at destination
                     var dstLot = await _lotRepo.GetByNumberAsync(dto.ArticleId, dstId, dto.NumeroLot);
@@ -178,8 +174,8 @@ public class StockServiceV3 : IStockServiceV3
                         });
                     }
 
-                    await AdjustStockQuantiteAsync(dto.ArticleId, srcId, -dto.Quantite);
-                    await AdjustStockQuantiteAsync(dto.ArticleId, dstId,  dto.Quantite);
+                    await AdjustStockQuantiteAsync(dto.ArticleId, srcId, -dto.Quantite, article.Quantity);
+                    await AdjustStockQuantiteAsync(dto.ArticleId, dstId,  dto.Quantite, article.Quantity);
                     break;
                 }
 
@@ -188,6 +184,7 @@ public class StockServiceV3 : IStockServiceV3
             }
 
             movement.LotId = lotId;
+            movement.TraceabiliteInfo = $"LOT: {dto.NumeroLot}";
             await _movementRepo.AddAsync(movement);
 
             // Sync legacy Quantity
@@ -231,25 +228,46 @@ public class StockServiceV3 : IStockServiceV3
                     int depotId = dto.DepotDestinationId
                         ?? throw new Exception("DepotDestinationId requis pour ENTREE/RETOUR.");
 
-                    // Validate no existing serial with same number
+                    // Validate no existing serial with same number, unless it is SORTI or DEFECTUEUX
+                    var newSeries = new List<NumeroSerie>();
+                    var existingSeriesToUpdate = new List<NumeroSerie>();
+
                     foreach (var sn in dto.NumeroSeries)
                     {
                         var existing = await _serieRepo.GetBySerialAsync(sn);
                         if (existing != null)
-                            throw new Exception($"Le numéro de série '{sn}' existe déjà dans le système (statut: {existing.Statut}).");
+                        {
+                            if (existing.Statut == SerialStatus.SORTI || existing.Statut == SerialStatus.DEFECTUEUX)
+                            {
+                                existing.Statut = SerialStatus.DISPONIBLE;
+                                existing.DepotId = depotId;
+                                existing.DateEntree = dto.DateEntreeLot?.ToUniversalTime() ?? DateTime.UtcNow;
+                                existingSeriesToUpdate.Add(existing);
+                            }
+                            else
+                            {
+                                throw new Exception($"Le numéro de série '{sn}' est déjà {existing.Statut} dans le système.");
+                            }
+                        }
+                        else
+                        {
+                            newSeries.Add(new NumeroSerie
+                            {
+                                ArticleId        = dto.ArticleId,
+                                DepotId          = depotId,
+                                NumeroSerieLabel = sn,
+                                Statut           = SerialStatus.DISPONIBLE,
+                                DateEntree       = dto.DateEntreeLot?.ToUniversalTime() ?? DateTime.UtcNow
+                            });
+                        }
                     }
 
-                    var newSeries = dto.NumeroSeries.Select(sn => new NumeroSerie
-                    {
-                        ArticleId        = dto.ArticleId,
-                        DepotId          = depotId,
-                        NumeroSerieLabel = sn,
-                        Statut           = SerialStatus.DISPONIBLE,
-                        DateEntree       = dto.DateEntreeLot?.ToUniversalTime() ?? DateTime.UtcNow
-                    }).ToList();
-
-                    await _serieRepo.AddRangeAsync(newSeries);
-                    await AdjustStockQuantiteAsync(dto.ArticleId, depotId, dto.Quantite);
+                    if (newSeries.Any())
+                        await _serieRepo.AddRangeAsync(newSeries);
+                        
+                    if (existingSeriesToUpdate.Any())
+                        await _serieRepo.UpdateRangeAsync(existingSeriesToUpdate);
+                    await AdjustStockQuantiteAsync(dto.ArticleId, depotId, dto.Quantite, article.Quantity);
                     break;
                 }
 
@@ -265,7 +283,7 @@ public class StockServiceV3 : IStockServiceV3
                         ns.Statut = SerialStatus.SORTI;
 
                     await _serieRepo.UpdateRangeAsync(series);
-                    await AdjustStockQuantiteAsync(dto.ArticleId, depotId, -dto.Quantite);
+                    await AdjustStockQuantiteAsync(dto.ArticleId, depotId, -dto.Quantite, article.Quantity);
                     break;
                 }
 
@@ -281,8 +299,8 @@ public class StockServiceV3 : IStockServiceV3
                         ns.DepotId = dstId;
 
                     await _serieRepo.UpdateRangeAsync(series);
-                    await AdjustStockQuantiteAsync(dto.ArticleId, srcId, -dto.Quantite);
-                    await AdjustStockQuantiteAsync(dto.ArticleId, dstId,  dto.Quantite);
+                    await AdjustStockQuantiteAsync(dto.ArticleId, srcId, -dto.Quantite, article.Quantity);
+                    await AdjustStockQuantiteAsync(dto.ArticleId, dstId,  dto.Quantite, article.Quantity);
                     break;
                 }
 
@@ -290,6 +308,7 @@ public class StockServiceV3 : IStockServiceV3
                     throw new Exception($"Type de mouvement inconnu : {dto.TypeMouvement}");
             }
 
+            movement.TraceabiliteInfo = $"SN: {string.Join(", ", dto.NumeroSeries)}";
             await _movementRepo.AddAsync(movement);
 
             // Sync legacy Quantity
@@ -340,18 +359,24 @@ public class StockServiceV3 : IStockServiceV3
             throw new Exception($"Numéros de série non disponibles: {string.Join(", ", notAvailable.Select(s => $"{s.NumeroSerieLabel} ({s.Statut})"))}");
     }
 
-    private async Task AdjustStockQuantiteAsync(int articleId, int depotId, int delta)
+    private async Task AdjustStockQuantiteAsync(int articleId, int depotId, int delta, int legacyQuantity = 0)
     {
         var sq = await _stockQuantiteRepo.GetByArticleAndDepotAsync(articleId, depotId);
 
         if (sq == null)
         {
-            if (delta < 0) throw new Exception("Stock insuffisant (dépôt vide).");
+            // Migration logic: if no multi-depot record exists, use legacy quantity as base
+            // to avoid overwriting existing stock with just the delta
+            int baseQuantity = legacyQuantity;
+
+            if (baseQuantity + delta < 0)
+                throw new Exception($"Stock insuffisant. Global: {baseQuantity}, Requis: {-delta}.");
+
             sq = new StockQuantite
             {
                 ArticleId     = articleId,
                 DepotId       = depotId,
-                Quantite      = delta,
+                Quantite      = baseQuantity + delta,
                 LastUpdatedAt = DateTime.UtcNow
             };
             await _stockQuantiteRepo.AddAsync(sq);

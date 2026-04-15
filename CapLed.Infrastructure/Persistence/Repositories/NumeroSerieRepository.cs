@@ -19,6 +19,14 @@ public class NumeroSerieRepository : INumeroSerieRepository
             .Where(ns => serials.Contains(ns.NumeroSerieLabel) && ns.DepotId == depotId)
             .ToListAsync();
 
+    public Task<List<NumeroSerie>> GetByArticleAsync(int articleId)
+        => _ctx.NumerosSerie
+            .Include(ns => ns.Depot)
+            .Where(ns => ns.ArticleId == articleId)
+            .OrderBy(ns => ns.Statut)
+            .ThenBy(ns => ns.NumeroSerieLabel)
+            .ToListAsync();
+
     public async Task AddRangeAsync(IEnumerable<NumeroSerie> series)
         => await _ctx.NumerosSerie.AddRangeAsync(series);
 

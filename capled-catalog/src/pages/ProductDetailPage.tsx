@@ -50,7 +50,7 @@ export const ProductDetailPage = () => {
       nom: product.nom,
       prixVente: product.prixVente,
       reference: product.reference,
-      image: product.urlImagePrincipale || product.images?.[0]
+      image: product.urlImagePrincipale || (product.images?.length > 0 ? product.images[0] : null)
     }, 1);
     
     setShowToast(true);

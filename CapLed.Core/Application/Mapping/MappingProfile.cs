@@ -26,7 +26,10 @@ public class MappingProfile : Profile
         // Equipment Mappings (Back-office)
         CreateMap<Equipment, EquipmentListItemDto>()
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Label : string.Empty))
-            .ForMember(dest => dest.AlertLevel, opt => opt.MapFrom(src => StockAlertHelper.GetAlertLevel(src.Quantity)));
+            .ForMember(dest => dest.AlertLevel, opt => opt.MapFrom(src => StockAlertHelper.GetAlertLevel(src.Quantity)))
+            .ForMember(dest => dest.TypeGestionStock, opt => opt.MapFrom(src => src.Category != null ? src.Category.TypeGestionStock : string.Empty))
+            .ForMember(dest => dest.MinThreshold, opt => opt.MapFrom(src => src.MinThreshold))
+            .ForMember(dest => dest.PrixVente, opt => opt.MapFrom(src => src.PrixVente));
 
         CreateMap<Equipment, EquipmentReadDto>()
             .IncludeBase<Equipment, EquipmentListItemDto>();
@@ -34,14 +37,16 @@ public class MappingProfile : Profile
         CreateMap<EquipmentCreateDto, Equipment>();
         CreateMap<EquipmentUpdateDto, Equipment>();
 
+        // Photos
+        CreateMap<Photo, PhotoDto>();
+
         // Equipment Mappings (Front-office Catalog)
         CreateMap<Equipment, EquipmentCatalogItemDto>()
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Label : string.Empty))
             .ForMember(dest => dest.AvailableQuantity, opt => opt.MapFrom(src => src.Quantity))
             .ForMember(dest => dest.MainPhotoUrl, opt => opt.MapFrom(src => 
-                (src.Photos.FirstOrDefault(p => p.IsPrimary) != null) 
-                    ? src.Photos.FirstOrDefault(p => p.IsPrimary).Url 
-                    : (src.Photos.FirstOrDefault() != null ? src.Photos.FirstOrDefault().Url : null)));
+                src.Photos.Where(p => p.IsPrimary).Select(p => p.Url).FirstOrDefault() ?? 
+                src.Photos.Select(p => p.Url).FirstOrDefault()));
 
         CreateMap<Equipment, EquipmentCatalogDetailDto>()
             .IncludeBase<Equipment, EquipmentCatalogItemDto>()

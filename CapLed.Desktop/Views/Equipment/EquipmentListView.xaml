@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:CapLed.Desktop.Views.Equipment"
+             xmlns:stockViews="clr-namespace:CapLed.Desktop.Views.Stock"
              xmlns:viewmodels="clr-namespace:CapLed.Desktop.ViewModels"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewmodels:EquipmentListViewModel}"
@@ -11,11 +12,12 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Status/Header -->
-            <RowDefinition Height="Auto"/> <!-- Filters -->
-            <RowDefinition Height="Auto"/> <!-- Toolbar -->
-            <RowDefinition Height="*"/>    <!-- Grid -->
-            <RowDefinition Height="Auto"/> <!-- Pagination -->
+            <RowDefinition Height="Auto"/>  <!-- Status/Header -->
+            <RowDefinition Height="Auto"/>  <!-- Filters -->
+            <RowDefinition Height="Auto"/>  <!-- Toolbar -->
+            <RowDefinition Height="*"/>     <!-- Grid -->
+            <RowDefinition Height="Auto"/>  <!-- Detail Panel -->
+            <RowDefinition Height="Auto"/>  <!-- Pagination -->
         </Grid.RowDefinitions>
 
         <!-- 1. Header & Messages -->
@@ -134,10 +136,57 @@
                       RowHeight="40"
                       HorizontalGridLinesBrush="#F1F5F9"
                       VerticalGridLinesBrush="Transparent">
+                <DataGrid.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick"
+                                  Command="{Binding ViewStockDetailCommand}"
+                                  CommandParameter="{Binding SelectedEquipment}"/>
+                </DataGrid.InputBindings>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="NOM" Binding="{Binding Name}" Width="2*" />
                     <DataGridTextColumn Header="CATÉGORIE" Binding="{Binding CategoryName}" Width="*" />
                     <DataGridTextColumn Header="RÉFÉRENCE" Binding="{Binding Reference}" Width="1.5*" />
+
+                    <!-- Colonne Type de Gestion Stock -->
+                    <DataGridTemplateColumn Header="GESTION" Width="110">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="4" Padding="6,2" HorizontalAlignment="Left" Margin="5,0">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#F1F5F9"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TypeGestionStock}" Value="LOT">
+                                                    <Setter Property="Background" Value="#EFF6FF"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding TypeGestionStock}" Value="SERIALISE">
+                                                    <Setter Property="Background" Value="#F0FDF4"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock FontSize="10" FontWeight="Bold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="QUANTITÉ"/>
+                                                <Setter Property="Foreground" Value="#64748B"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TypeGestionStock}" Value="LOT">
+                                                        <Setter Property="Text" Value="LOT"/>
+                                                        <Setter Property="Foreground" Value="#1D4ED8"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TypeGestionStock}" Value="SERIALISE">
+                                                        <Setter Property="Text" Value="SÉRIES"/>
+                                                        <Setter Property="Foreground" Value="#15803D"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
                     <DataGridTemplateColumn Header="ÉTAT" Width="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -149,11 +198,21 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="QUANTITÉ" Binding="{Binding Quantity}" Width="100">
+
+                    <DataGridTextColumn Header="QTÉ" Binding="{Binding Quantity}" Width="80">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                 <Setter Property="FontWeight" Value="Bold"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="SEUIL" Binding="{Binding MinThreshold}" Width="70">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                <Setter Property="Foreground" Value="#94A3B8"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
@@ -172,8 +231,14 @@
             </DataGrid>
         </Border>
 
+        <!-- 4. Stock Detail Panel (visible on row double-click) -->
+        <stockViews:StockDetailPanel Grid.Row="4"
+                                     DataContext="{Binding StockDetail}"
+                                     MaxHeight="260"
+                                     Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}"/>
+
         <!-- 5. Pagination -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
             <TextBlock VerticalAlignment="Center" Margin="0,0,15,0" Foreground="#475569">
                 <Run Text="{Binding TotalCount}"/>
                 <Run Text="résultats — Page"/>
