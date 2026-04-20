@@ -40,7 +40,7 @@ public class CreateLeadDto
     public string? Commentaire      { get; set; }
     public string  SourceAcquisition { get; set; } = "DIRECT";
 
-    [Required] [MinLength(1)]
+    [Required] [MinLength(1, ErrorMessage = "La demande de devis doit contenir au moins un article.")]
     public List<CreateLigneLeadDto> Lignes { get; set; } = new();
 }
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StockManager.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using StockManager.Infrastructure.Persistence;
 namespace StockManager.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(StockManagementDbContext))]
-    partial class StockManagementDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260415232141_AddClientAuthFields")]
+    partial class AddClientAuthFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

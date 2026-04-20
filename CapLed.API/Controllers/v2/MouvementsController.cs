@@ -40,18 +40,10 @@ public class MouvementsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<MouvementStockReadDto>> CreateMouvement(CreateMouvementDto request)
     {
-        try
-        {
-            var userId   = GetCurrentUserId();
-            var movement = await _stockService.CreateMouvementAsync(request, userId);
+        var userId   = GetCurrentUserId();
+        var movement = await _stockService.CreateMouvementAsync(request, userId);
 
-            // Re-fetch to include navigation properties
-            var created = await _movementRepository.GetByIdAsync(movement.Id);
-            return Ok(_mapper.Map<MouvementStockReadDto>(created));
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { errors = new { Error = new[] { ex.Message } } });
-        }
+        var created = await _movementRepository.GetByIdAsync(movement.Id);
+        return Ok(_mapper.Map<MouvementStockReadDto>(created));
     }
 }

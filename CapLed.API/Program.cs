@@ -21,20 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// Standardize Validation Error Response
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.InvalidModelStateResponseFactory = context =>
-    {
-        var errors = context.ModelState
-            .ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-            );
-
-        return new BadRequestObjectResult(new { errors });
-    };
-});
+// Standardize Validation Error Response removed from here and moved to AddControllers
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 0));
@@ -44,6 +31,24 @@ builder.Services.AddDbContext<StockManagementDbContext>(options =>
         b => b.MigrationsAssembly("StockManager.Infrastructure")));
 
 builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var firstError = context.ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .FirstOrDefault() ?? "Les données fournies sont invalides.";
+
+            var response = new 
+            { 
+                code = "VALIDATION_ERROR", 
+                message = firstError 
+            };
+
+            return new BadRequestObjectResult(response);
+        };
+    })
     .AddJsonOptions(options =>
     {
         // Accept enum values as their string names (UPPERCASE, matching enum definitions)
@@ -113,6 +118,9 @@ builder.Services.AddScoped<IArticleDynamicFieldService, ArticleDynamicFieldServi
 builder.Services.AddScoped<IArticleEtatDetailRepository, ArticleEtatDetailRepository>();
 builder.Services.AddScoped<IArticleEtatDetailService, ArticleEtatDetailService>();
 builder.Services.AddScoped<ICataloguePublicService, CataloguePublicService>();
+
+// Email service (confirmation des comptes clients)
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // QuestPDF License
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
@@ -208,3 +216,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

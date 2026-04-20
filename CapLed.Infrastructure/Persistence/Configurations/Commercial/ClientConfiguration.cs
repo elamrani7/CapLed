@@ -19,6 +19,12 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(c => c.Adresse).HasColumnType("TEXT");
         builder.Property(c => c.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
+        // Authentification site public
+        builder.Property(c => c.PasswordHash).HasMaxLength(500);
+        builder.Property(c => c.IsEmailConfirmed).HasDefaultValue(false);
+        builder.Property(c => c.ConfirmationToken).HasMaxLength(200);
+        builder.Property(c => c.TokenExpiry);
+
         builder.HasIndex(c => c.Email).IsUnique();
     }
 }

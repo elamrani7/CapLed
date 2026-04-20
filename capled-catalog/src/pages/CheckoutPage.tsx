@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { leadApi } from '../api/leadApi';
+import { getErrorMessage } from '../utils/apiErrors';
 
 export const CheckoutPage = () => {
   const { cartItems, totalItems, clearCart } = useCart();
@@ -34,8 +35,7 @@ export const CheckoutPage = () => {
     );
   }
 
-  const subtotal = cartItems.reduce((acc: number, item: any) => acc + (item.prixVente || 0) * item.quantity, 0);
-  const formattedPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(subtotal);
+  const totalQuantity = cartItems.reduce((acc: number, item: any) => acc + item.quantity, 0);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -51,13 +51,14 @@ export const CheckoutPage = () => {
 
     try {
       const payload = {
-        nomProprietaire: formData.nomProprietaire,
+        nomClient: formData.nomProprietaire,
         societe: formData.societe,
-        email: formData.email,
+        emailClient: formData.email,
         telephone: formData.telephone,
-        lignesLead: cartItems.map((item: any) => ({
+        sourceAcquisition: "SITE_WEB",
+        lignes: cartItems.map((item: any) => ({
           articleId: item.articleId,
-          quantite: item.quantity
+          quantiteDemandee: item.quantity
         }))
       };
 
@@ -66,8 +67,8 @@ export const CheckoutPage = () => {
       clearCart();
       navigate('/success');
 
-    } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue lors de l\'envoi de votre demande.');
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -196,14 +197,13 @@ export const CheckoutPage = () => {
                 
                 <div className="d-flex justify-content-between align-items-center mb-3 text-secondary">
                   <span>Articles</span>
-                  <span className="fw-bold text-dark">{totalItems}</span>
+                  <span className="fw-bold text-dark">{totalQuantity}</span>
                 </div>
                 
-                <div className="d-flex justify-content-between align-items-center mb-4 text-secondary">
-                  <span>Estimation HT</span>
-                  <span className="fw-bold text-primary fs-5">{formattedPrice}</span>
+                <div className="d-flex align-items-center gap-2 mb-4 p-2 bg-light rounded">
+                  <i className="bi bi-tag-fill text-primary"></i>
+                  <span className="small text-muted">Prix communiqué par devis</span>
                 </div>
-                
                 <hr className="border-secondary opacity-25" />
                 
                 <div className="mt-3">
@@ -214,7 +214,7 @@ export const CheckoutPage = () => {
                           <span className="fw-bold text-dark me-1">{item.quantity}x</span> {item.nom}
                         </span>
                         <span className="text-dark fw-medium text-end">
-                          {item.prixVente > 0 ? (item.prixVente * item.quantity).toFixed(2) + ' €' : '-'}
+                          x{item.quantity}
                         </span>
                       </li>
                     ))}

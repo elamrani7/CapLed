@@ -86,9 +86,6 @@ export const ProductDetailPage = () => {
   }
 
   const isOccasionOrRecond = product.condition === 'OCCASION' || product.condition === 'RECONDITIONNE';
-  const formattedPrice = product.prixVente > 0 
-    ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(product.prixVente)
-    : 'Sur Devis';
 
   return (
     <div className="d-flex flex-column min-vh-100 bg-light pb-5">
@@ -163,17 +160,16 @@ export const ProductDetailPage = () => {
               </div>
 
               <div className="col-xl-4">
-                {/* B2B Price & CTA Box */}
+                {/* B2B CTA Box */}
                 <div className="card shadow-sm border-0 bg-white mb-4 rounded-0" style={{ outline: '1px solid #e9ecef', position: 'sticky', top: '20px' }}>
                   <div className="card-body p-3 p-xl-4 d-flex flex-column gap-3">
-                    <div className="d-flex justify-content-between align-items-end mb-1">
-                      <div>
-                        <div className="d-flex align-items-end gap-1">
-                          <span className="fs-2 fw-bolder text-danger lh-1 mb-0">{formattedPrice}</span>
-                          {product.prixVente > 0 && <span className="text-secondary fw-bold fs-6 mb-1">HT</span>}
-                        </div>
-                        <span className="small text-success fw-bold d-block mt-2" style={{ fontSize: '0.8rem' }}><i className="bi bi-truck me-1"></i>Livraison disponible</span>
+                    <div className="mb-1">
+                      <div className="d-flex align-items-center gap-2 mb-2">
+                        <i className="bi bi-tag-fill text-primary fs-4"></i>
+                        <span className="fs-4 fw-bolder text-primary lh-1">Prix sur devis</span>
                       </div>
+                      <span className="small text-muted d-block" style={{ fontSize: '0.8rem' }}>Ajoutez cet article à votre demande de devis pour recevoir nos meilleurs tarifs.</span>
+                      <span className="small text-success fw-bold d-block mt-2" style={{ fontSize: '0.8rem' }}><i className="bi bi-truck me-1"></i>Livraison disponible</span>
                     </div>
                     
                     <button 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { catalogueApi } from '../../api/catalogueApi';
 
 export const Navbar = () => {
   const { totalItems } = useCart();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,13 +112,34 @@ export const Navbar = () => {
                 </div>
               </Link>
 
-              <div className="text-white d-flex align-items-center gap-3" style={{ cursor: 'pointer' }}>
-                <i className="bi bi-person-circle fs-3 text-secondary"></i>
-                <div className="d-none d-xl-block lh-sm text-start">
-                  <span className="fw-bolder d-block text-light" style={{ fontSize: '0.85rem' }}>Mon Espace</span>
-                  <small className="text-secondary" style={{ fontSize: '0.75rem' }}>Se connecter</small>
+              {isAuthenticated ? (
+                <div className="dropdown">
+                  <div className="text-white d-flex align-items-center gap-3 dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ cursor: 'pointer' }}>
+                    <i className="bi bi-person-check-fill fs-3" style={{ color: '#2ECC71' }}></i>
+                    <div className="d-none d-xl-block lh-sm text-start">
+                      <span className="fw-bolder d-block text-light" style={{ fontSize: '0.85rem' }}>{user?.fullName}</span>
+                      <small className="text-success" style={{ fontSize: '0.75rem' }}>Connecté</small>
+                    </div>
+                  </div>
+                  <ul className="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li><span className="dropdown-item-text text-muted small"><i className="bi bi-envelope me-2"></i>{user?.email}</span></li>
+                    <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <button className="dropdown-item text-danger" onClick={() => { logout(); navigate('/'); }}>
+                        <i className="bi bi-box-arrow-left me-2"></i>Se déconnecter
+                      </button>
+                    </li>
+                  </ul>
                 </div>
-              </div>
+              ) : (
+                <Link to="/login" className="text-white text-decoration-none d-flex align-items-center gap-3">
+                  <i className="bi bi-person-circle fs-3 text-secondary"></i>
+                  <div className="d-none d-xl-block lh-sm text-start">
+                    <span className="fw-bolder d-block text-light" style={{ fontSize: '0.85rem' }}>Mon Espace</span>
+                    <small className="text-secondary" style={{ fontSize: '0.75rem' }}>Se connecter</small>
+                  </div>
+                </Link>
+              )}
 
             </div>
           </div>

@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom';
 import { BadgeDisponibilite, BadgeCondition } from '../shared/Badge';
 
 export const ProductCard = ({ product }: { product: any }) => {
-  const formattedPrice = product.prixVente > 0
-    ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(product.prixVente)
-    : 'Sur Devis';
 
   return (
     <div className="card h-100 bg-white autodoc-card rounded-0 border-0 shadow-sm" style={{ outline: '1px solid #e9ecef' }}>
@@ -54,18 +51,17 @@ export const ProductCard = ({ product }: { product: any }) => {
           )}
         </div>
 
-        {/* Footer info (Prix + action) */}
+        {/* Footer info (CTA) */}
         <div className="mt-2 text-end">
           <div className="mb-2 d-flex align-items-baseline justify-content-end gap-1">
-            <span className="fs-5 fw-bolder text-danger lh-1">{formattedPrice}</span>
-            {product.prixVente > 0 && <span className="small text-muted fw-bold" style={{ fontSize: '0.7rem' }}>HT</span>}
+            <span className="fs-6 fw-bold text-primary lh-1"><i className="bi bi-tag me-1"></i>Prix sur devis</span>
           </div>
           <Link 
             to={`/catalogue/${product.id}`}
             className="btn btn-warning w-100 fw-bold border-dark border-opacity-10 py-1"
             style={{ fontSize: '0.85rem' }}
           >
-            Détails de l'article
+            Demander un devis
           </Link>
         </div>
       </div>

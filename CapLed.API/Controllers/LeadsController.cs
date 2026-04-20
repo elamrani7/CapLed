@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StockManager.Core.Application.DTOs.Commercial;
 using StockManager.Core.Application.Interfaces.Services;
+using StockManager.Core.Domain.Exceptions;
 
 namespace StockManager.API.Controllers;
 
@@ -13,11 +14,13 @@ public class LeadsController : ControllerBase
 {
     private readonly ILeadService _leadService;
     private readonly IMapper      _mapper;
+    private readonly ILogger<LeadsController> _logger;
 
-    public LeadsController(ILeadService leadService, IMapper mapper)
+    public LeadsController(ILeadService leadService, IMapper mapper, ILogger<LeadsController> logger)
     {
         _leadService = leadService;
         _mapper      = mapper;
+        _logger      = logger;
     }
 
     /// <summary>Liste tous les leads (tous statuts).</summary>
@@ -35,7 +38,8 @@ public class LeadsController : ControllerBase
     public async Task<ActionResult<LeadReadDto>> GetById(int id)
     {
         var lead = await _leadService.GetByIdAsync(id);
-        return lead == null ? NotFound() : Ok(_mapper.Map<LeadReadDto>(lead));
+        if (lead == null) throw new NotFoundException("LEAD_NOT_FOUND", $"Le lead {id} est introuvable.");
+        return Ok(_mapper.Map<LeadReadDto>(lead));
     }
 
     /// <summary>
@@ -44,18 +48,15 @@ public class LeadsController : ControllerBase
     /// Upserte le client par email.
     /// </summary>
     [HttpPost]
-    [AllowAnonymous] // accessible depuis le site vitrine sans authentification
+    [AllowAnonymous]
     public async Task<ActionResult<LeadReadDto>> Create(CreateLeadDto dto)
     {
-        try
-        {
-            var lead = await _leadService.CreateLeadAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = lead.Id }, _mapper.Map<LeadReadDto>(lead));
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { errors = new { Error = new[] { ex.Message } } });
-        }
+        _logger.LogInformation("Lead submission: Client={Client}, Source={Source}, Lignes={Count}",
+            dto.EmailClient, dto.SourceAcquisition, dto.Lignes?.Count ?? 0);
+
+        var lead = await _leadService.CreateLeadAsync(dto);
+        _logger.LogInformation("Lead created: ID={Id}, Numero={Numero}", lead.Id, lead.NumeroDevis);
+        return CreatedAtAction(nameof(GetById), new { id = lead.Id }, _mapper.Map<LeadReadDto>(lead));
     }
 
     /// <summary>
@@ -65,14 +66,7 @@ public class LeadsController : ControllerBase
     [Authorize(Roles = "ADMIN,COMMERCIAL")]
     public async Task<ActionResult<LeadReadDto>> UpdateStatut(int id, UpdateLeadStatutDto dto)
     {
-        try
-        {
-            var lead = await _leadService.UpdateStatutAsync(id, dto);
-            return Ok(_mapper.Map<LeadReadDto>(lead));
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { errors = new { Error = new[] { ex.Message } } });
-        }
+        var lead = await _leadService.UpdateStatutAsync(id, dto);
+        return Ok(_mapper.Map<LeadReadDto>(lead));
     }
 }

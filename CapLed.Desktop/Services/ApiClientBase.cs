@@ -143,44 +143,62 @@ public abstract class ApiClientBase
         catch { /* ignored */ }
 
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
             return "Session expirée ou non autorisée. Veuillez vous reconnecter.";
-        }
 
         if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-        {
             return "Accès refusé. Vous n'avez pas les permissions nécessaires pour cette action.";
-        }
 
-        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest && !string.IsNullOrWhiteSpace(rawContent))
+        // ── Parse the standardized backend error format: { code, message } ──
+        if (!string.IsNullOrWhiteSpace(rawContent))
         {
             try
             {
-                // Try to parse ASP.NET Core Validation Problem JSON
                 using var doc = JsonDocument.Parse(rawContent);
-                var problem = doc.RootElement;
-                
-                if (problem.TryGetProperty("errors", out var errors))
+                var root = doc.RootElement;
+
+                // Standard format: { "code": "...", "message": "..." }
+                if (root.TryGetProperty("message", out var msgProp) && 
+                    !string.IsNullOrWhiteSpace(msgProp.GetString()))
                 {
-                    return $"{context} validation failed: {errors}";
+                    return msgProp.GetString()!;
                 }
-                if (problem.TryGetProperty("detail", out var detail))
+
+                // Legacy ASP.NET validation format: { "errors": { "Field": ["msg"] } }
+                if (root.TryGetProperty("errors", out var errors))
                 {
-                    return $"{context} failed: {detail.GetString()}";
+                    var messages = new List<string>();
+                    foreach (var field in errors.EnumerateObject())
+                    {
+                        if (field.Value.ValueKind == JsonValueKind.Array)
+                            foreach (var msg in field.Value.EnumerateArray())
+                                if (msg.GetString() is { } s) messages.Add(s);
+                    }
+                    if (messages.Count > 0) return string.Join(" ", messages);
                 }
-                if (problem.TryGetProperty("error", out var error))
+
+                // Legacy format: { "error": "..." }
+                if (root.TryGetProperty("error", out var errorProp) &&
+                    !string.IsNullOrWhiteSpace(errorProp.GetString()))
                 {
-                    return $"{context} failed: {error.GetString()}";
+                    return errorProp.GetString()!;
                 }
+
+                // Short raw content fallback
+                if (rawContent.Length < 250 && !rawContent.TrimStart().StartsWith("{"))
+                    return rawContent;
             }
-            catch 
-            { 
-                // Fallback: If it's BadRequest but not valid JSON, return the raw text if short
-                if (rawContent.Length < 200) return $"{context} failed: {rawContent}";
-            }
+            catch { /* Not valid JSON — fall through */ }
         }
 
-        return $"{context} failed: {response.ReasonPhrase} ({(int)response.StatusCode})";
+        // HTTP status fallbacks
+        return response.StatusCode switch
+        {
+            System.Net.HttpStatusCode.NotFound           => "La ressource demandée est introuvable.",
+            System.Net.HttpStatusCode.Conflict           => "Un conflit a été détecté. Vérifiez les données saisies.",
+            System.Net.HttpStatusCode.BadRequest         => "La demande est invalide. Vérifiez les informations saisies.",
+            System.Net.HttpStatusCode.InternalServerError => "Une erreur interne est survenue. Contactez l'administrateur.",
+            _ => $"{context} a échoué ({(int)response.StatusCode})."
+        };
     }
 
     // ─── PUT ─────────────────────────────────────────────────────────────────

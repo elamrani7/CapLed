@@ -124,7 +124,8 @@ public class StockMovementViewModel : BaseViewModel
             }
             catch (Exception ex)
             {
-                ErrorMessage = "Erreur détermination mode de stock: " + ex.Message;
+                ErrorMessage = "Impossible de déterminer le mode de gestion de stock pour cet article.";
+                System.Diagnostics.Debug.WriteLine($"[StockMode] {ex.Message}");
             }
         }
     }
@@ -241,9 +242,13 @@ public class StockMovementViewModel : BaseViewModel
             EquipmentChoices.Clear();
             foreach (var e in equipments.Items) EquipmentChoices.Add(e);
         }
-        catch (Exception ex)
+        catch (ApiException ex)
         {
-            ErrorMessage = "Erreur chargement équipements: " + ex.Message;
+            ErrorMessage = ex.Message; // Already a business message from the API
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Impossible de charger la liste des articles. Vérifiez votre connexion.";  
         }
     }
 
@@ -267,9 +272,13 @@ public class StockMovementViewModel : BaseViewModel
             foreach (var m in result.Items) Movements.Add(m);
             TotalCount = result.TotalCount;
         }
-        catch (Exception ex)
+        catch (ApiException ex)
         {
-            ErrorMessage = "Erreur lors du chargement de l'historique : " + ex.Message;
+            ErrorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Impossible de charger l'historique des mouvements. Vérifiez votre connexion.";
         }
         finally
         {
@@ -394,9 +403,13 @@ public class StockMovementViewModel : BaseViewModel
                 }
             }
         }
-        catch (Exception ex)
+        catch (ApiException ex)
         {
-            ErrorMessage = "Erreur lors de l'enregistrement : " + ex.Message;
+            ErrorMessage = ex.Message; // Business message from the API (e.g. STOCK_INSUFFICIENT)
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "L'enregistrement du mouvement a échoué. Vérifiez les informations saisies.";  
         }
         finally
         {
@@ -422,9 +435,13 @@ public class StockMovementViewModel : BaseViewModel
                     if (SelectedMovement?.Id == movement.Id) ResetForm();
                 }
             }
-            catch (Exception ex)
+            catch (ApiException ex)
             {
-                ErrorMessage = "Erreur suppression : " + ex.Message;
+                ErrorMessage = ex.Message;
+            }
+            catch (Exception)
+            {
+                ErrorMessage = "La suppression du mouvement a échoué. Veuillez réessayer.";  
             }
             finally
             {

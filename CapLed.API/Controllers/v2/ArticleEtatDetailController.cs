@@ -20,22 +20,17 @@ public class ArticleEtatDetailController : ControllerBase
     public async Task<IActionResult> Get(int articleId)
     {
         var result = await _service.GetByArticleIdAsync(articleId);
-        if (result == null) return NotFound("Details not found for this article.");
+        if (result == null)
+            throw new StockManager.Core.Domain.Exceptions.NotFoundException(
+                "ARTICLE_ETAT_NOT_FOUND", $"Aucun état de détail trouvé pour l'article {articleId}.");
         return Ok(result);
     }
 
     [HttpPut]
     public async Task<IActionResult> Update(int articleId, [FromBody] CreateOrUpdateArticleEtatDetailDto dto)
     {
-        try
-        {
-            var result = await _service.CreateOrUpdateAsync(articleId, dto);
-            return Ok(result);
-        }
-        catch (System.Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var result = await _service.CreateOrUpdateAsync(articleId, dto);
+        return Ok(result);
     }
 
     [HttpDelete]

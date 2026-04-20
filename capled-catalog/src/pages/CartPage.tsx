@@ -9,14 +9,6 @@ export const CartPage = () => {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
   const navigate = useNavigate();
 
-  const subtotal = cartItems.reduce((acc: number, item: any) => acc + (item.prixVente || 0) * item.quantity, 0);
-
-  const formatPrice = (price?: number) => {
-    return price && price > 0
-      ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price)
-      : 'Sur Devis';
-  };
-
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
       <Navbar />
@@ -46,7 +38,6 @@ export const CartPage = () => {
                     <tr>
                       <th scope="col" className="ps-4">Article</th>
                       <th scope="col" className="text-center">Quantité</th>
-                      <th scope="col" className="text-end">Prix</th>
                       <th scope="col" className="text-center pe-4">Action</th>
                     </tr>
                   </thead>
@@ -78,9 +69,6 @@ export const CartPage = () => {
                             onChange={(val) => updateQuantity(item.articleId, val)} 
                           />
                         </td>
-                        <td className="text-end fw-bold text-danger">
-                          {formatPrice((item.prixVente || 0) * item.quantity)}
-                        </td>
                         <td className="text-center pe-4">
                           <button 
                             onClick={() => removeFromCart(item.articleId)}
@@ -103,17 +91,14 @@ export const CartPage = () => {
                 <div className="card-body p-4">
                   <h5 className="fw-bold mb-4 pb-3 border-bottom text-uppercase fs-6">Récapitulatif de la demande</h5>
                   
-                  <div className="d-flex justify-content-between align-items-end mb-4">
-                    <span className="text-secondary fw-bold">Total estimé</span>
-                    <div className="text-end">
-                      <span className="fs-3 fw-bolder text-danger lh-1">{formatPrice(subtotal)}</span>
-                      {subtotal > 0 && <span className="small text-muted fw-bold ms-1">HT</span>}
-                      {subtotal === 0 && (
-                        <small className="text-muted fst-italic d-block mt-1">
-                          * Le prix sera fixé dans le devis
-                        </small>
-                      )}
-                    </div>
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <span className="text-secondary fw-bold">Articles demandés</span>
+                    <span className="fs-3 fw-bolder text-primary lh-1">{cartItems.reduce((acc: number, item: any) => acc + item.quantity, 0)}</span>
+                  </div>
+
+                  <div className="d-flex align-items-center gap-2 mb-3 p-2 bg-light rounded">
+                    <i className="bi bi-tag-fill text-primary"></i>
+                    <span className="small text-muted">Le prix sera communiqué dans le devis personnalisé par notre équipe commerciale.</span>
                   </div>
 
                   <div className="alert alert-warning d-flex gap-2" role="alert">

@@ -23,12 +23,14 @@ public class LeadRepository : ILeadRepository
         => _ctx.Leads
             .Include(l => l.Client)
             .Include(l => l.Commercial)
+            .Include(l => l.Lignes).ThenInclude(lg => lg.Article)
             .OrderByDescending(l => l.DateSoumission)
             .ToListAsync();
 
     public Task<List<Lead>> GetByStatutAsync(string statut)
         => _ctx.Leads
             .Include(l => l.Client)
+            .Include(l => l.Lignes).ThenInclude(lg => lg.Article)
             .Where(l => l.Statut == statut)
             .OrderByDescending(l => l.DateSoumission)
             .ToListAsync();

@@ -2,6 +2,7 @@ using StockManager.Core.Application.DTOs.Commercial;
 using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Application.Interfaces.Services;
 using StockManager.Core.Domain.Entities.Commercial;
+using StockManager.Core.Domain.Exceptions;
 
 namespace StockManager.Core.Application.Services;
 
@@ -26,6 +27,11 @@ public class LeadService : ILeadService
 
     public async Task<Lead> CreateLeadAsync(CreateLeadDto dto)
     {
+        // Business validation
+        if (dto.Lignes == null || dto.Lignes.Count == 0)
+            throw new DomainException("LEAD_EMPTY_CART",
+                "La demande de devis doit contenir au moins un article.");
+
         await _uow.BeginTransactionAsync();
         try
         {
@@ -86,7 +92,7 @@ public class LeadService : ILeadService
     public async Task<Lead> UpdateStatutAsync(int leadId, UpdateLeadStatutDto dto)
     {
         var lead = await _leadRepo.GetByIdAsync(leadId)
-            ?? throw new Exception($"Lead {leadId} introuvable.");
+            ?? throw new NotFoundException("LEAD_NOT_FOUND", $"Le lead {leadId} est introuvable.");
 
         // Validate transition
         ValidateStatutTransition(lead.Statut, dto.Statut);

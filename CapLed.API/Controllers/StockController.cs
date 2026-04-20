@@ -57,23 +57,15 @@ public class StockController : ControllerBase
     [HttpPost("exit")]
     public async Task<ActionResult<StockMovementReadDto>> RecordExit(StockMovementCreateDto request)
     {
-        try
-        {
-            var userId = GetCurrentUserId();
-            var movement = await _stockService.RecordExitAsync(
-                request.EquipmentId, 
-                request.Quantity, 
-                userId, 
-                remarks: request.Comment);
+        var userId = GetCurrentUserId();
+        var movement = await _stockService.RecordExitAsync(
+            request.EquipmentId,
+            request.Quantity,
+            userId,
+            remarks: request.Comment);
 
-            // Re-fetch to include relations for the DTO
-            var created = await _movementRepository.GetByIdAsync(movement.Id);
-            return Ok(_mapper.Map<StockMovementReadDto>(created));
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { Error = ex.Message });
-        }
+        var created = await _movementRepository.GetByIdAsync(movement.Id);
+        return Ok(_mapper.Map<StockMovementReadDto>(created));
     }
 
     /// <summary>
@@ -138,20 +130,13 @@ public class StockController : ControllerBase
     [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> UpdateMovement(int id, [FromBody] StockMovementCreateDto request)
     {
-        try
-        {
-            await _stockService.UpdateMovementAsync(
-                id,
-                request.EquipmentId,
-                request.Type,
-                request.Quantity,
-                request.Comment);
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { errors = new { Error = new[] { ex.Message } } });
-        }
+        await _stockService.UpdateMovementAsync(
+            id,
+            request.EquipmentId,
+            request.Type,
+            request.Quantity,
+            request.Comment);
+        return NoContent();
     }
 
     /// <summary>
@@ -162,14 +147,7 @@ public class StockController : ControllerBase
     [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> DeleteMovement(int id)
     {
-        try
-        {
-            await _stockService.DeleteMovementAsync(id);
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { errors = new { Error = new[] { ex.Message } } });
-        }
+        await _stockService.DeleteMovementAsync(id);
+        return NoContent();
     }
 }
