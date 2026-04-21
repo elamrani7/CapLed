@@ -1,0 +1,61 @@
+name: CapLed CI Pipeline
+
+on:
+  push:
+    branches: [ "stable-version", "main" ]
+  pull_request:
+    branches: [ "stable-version", "main" ]
+
+jobs:
+  build-and-test-backend:
+    name: Backend .NET 8 CI
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore CapLed.sln
+
+    - name: Build
+      run: dotnet build CapLed.sln --configuration Release --no-restore
+
+    - name: Run Unit Tests
+      run: dotnet test CapLed.Tests.Unit/CapLed.Tests.Unit.csproj --no-build --configuration Release --verbosity normal
+
+    - name: Run Integration Tests
+      run: dotnet test CapLed.Tests.Integration/CapLed.Tests.Integration.csproj --no-build --configuration Release --verbosity normal
+
+  build-frontend:
+    name: Frontend React CI
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' # Vite / TS usually prefers Node 18 or 20+
+
+    - name: Install dependencies
+      working-directory: ./capled-catalog
+      run: npm ci
+
+    - name: Build React App
+      working-directory: ./capled-catalog
+      run: npm run build
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-dist
+        path: ./capled-catalog/dist/
+        retention-days: 7

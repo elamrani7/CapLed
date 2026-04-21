@@ -1,0 +1,197 @@
+Summary
+  Generated on: 21/04/2026 - 14:17:49
+  Coverage date: 21/04/2026 - 14:05:22 - 21/04/2026 - 14:17:46
+  Parser: MultiReport (5x Cobertura)
+  Assemblies: 3
+  Classes: 171
+  Files: 134
+  Line coverage: 7.4%
+  Covered lines: 1184
+  Uncovered lines: 14772
+  Coverable lines: 15956
+  Total lines: 20347
+  Branch coverage: 12.8% (74 of 576)
+  Covered branches: 74
+  Total branches: 576
+  Method coverage: 19.9% (183 of 919)
+  Full method coverage: 18.9% (174 of 919)
+  Covered methods: 183
+  Fully covered methods: 174
+  Total methods: 919
+
+StockManager.API                                                                                     25.8%
+  Program                                                                                            81.6%
+  StockManager.API.Controllers.AlertsController                                                         0%
+  StockManager.API.Controllers.AuthController                                                           0%
+  StockManager.API.Controllers.CatalogController                                                        0%
+  StockManager.API.Controllers.CategoryController                                                       0%
+  StockManager.API.Controllers.ClientAuthController                                                  51.2%
+  StockManager.API.Controllers.ClientsController                                                        0%
+  StockManager.API.Controllers.Commercial.OrdersController                                              0%
+  StockManager.API.Controllers.EquipmentController                                                      0%
+  StockManager.API.Controllers.FamilleController                                                        0%
+  StockManager.API.Controllers.LeadsController                                                       54.1%
+  StockManager.API.Controllers.StockController                                                          0%
+  StockManager.API.Controllers.UsersController                                                          0%
+  StockManager.API.Controllers.v1.CataloguePublicController                                             0%
+  StockManager.API.Controllers.v2.ArticleDynamicFieldsController                                        0%
+  StockManager.API.Controllers.v2.ArticleEtatDetailController                                           0%
+  StockManager.API.Controllers.v2.ArticleStockDetailDto                                                 0%
+  StockManager.API.Controllers.v2.ChampSpecifiqueController                                             0%
+  StockManager.API.Controllers.v2.DocumentsController                                                   0%
+  StockManager.API.Controllers.V2.LeadsV2Controller                                                     0%
+  StockManager.API.Controllers.v2.LotDetailDto                                                          0%
+  StockManager.API.Controllers.v2.MouvementsController                                                  0%
+  StockManager.API.Controllers.v2.SerieDetailDto                                                        0%
+  StockManager.API.Controllers.v2.StockDetailController                                                 0%
+  StockManager.API.Middleware.ExceptionMappingMiddleware                                              100%
+
+StockManager.Core                                                                                    32.2%
+  StockManager.Core.Application.DTOs.AlertReadDto                                                       0%
+  StockManager.Core.Application.DTOs.AlertUpdateDto                                                     0%
+  StockManager.Core.Application.DTOs.Auth.ClientLoginDto                                              100%
+  StockManager.Core.Application.DTOs.Auth.ClientLoginResponseDto                                        0%
+  StockManager.Core.Application.DTOs.Auth.ClientRegisterDto                                           100%
+  StockManager.Core.Application.DTOs.Catalogue.ArticleChampValeurDto                                    0%
+  StockManager.Core.Application.DTOs.Catalogue.ArticleEtatDetailDto                                     0%
+  StockManager.Core.Application.DTOs.Catalogue.CatalogueFilterDto                                       0%
+  StockManager.Core.Application.DTOs.Catalogue.ChampSpecifiqueReadDto                                   0%
+  StockManager.Core.Application.DTOs.Catalogue.CreateChampSpecifiqueDto                                 0%
+  StockManager.Core.Application.DTOs.Catalogue.FamilleDto                                               0%
+  StockManager.Core.Application.DTOs.Catalogue.PublicArticleDetailDto                                   0%
+  StockManager.Core.Application.DTOs.Catalogue.PublicArticleListItemDto                                 0%
+  StockManager.Core.Application.DTOs.Catalogue.PublicSpecDto                                            0%
+  StockManager.Core.Application.DTOs.Catalogue.UpdateArticleDynamicFieldsDto                            0%
+  StockManager.Core.Application.DTOs.CategoryDto                                                        0%
+  StockManager.Core.Application.DTOs.Commercial.BonCommandeReadDto                                      0%
+  StockManager.Core.Application.DTOs.Commercial.BonLivraisonReadDto                                     0%
+  StockManager.Core.Application.DTOs.Commercial.ClientReadDto                                         100%
+  StockManager.Core.Application.DTOs.Commercial.CreateBonCommandeDto                                    0%
+  StockManager.Core.Application.DTOs.Commercial.CreateBonLivraisonDto                                   0%
+  StockManager.Core.Application.DTOs.Commercial.CreateClientDto                                         0%
+  StockManager.Core.Application.DTOs.Commercial.CreateLeadDto                                         100%
+  StockManager.Core.Application.DTOs.Commercial.CreateLigneBCDto                                        0%
+  StockManager.Core.Application.DTOs.Commercial.CreateLigneBLDto                                        0%
+  StockManager.Core.Application.DTOs.Commercial.CreateLigneLeadDto                                    100%
+  StockManager.Core.Application.DTOs.Commercial.LeadReadDto                                           100%
+  StockManager.Core.Application.DTOs.Commercial.LigneBCReadDto                                          0%
+  StockManager.Core.Application.DTOs.Commercial.LigneBLReadDto                                          0%
+  StockManager.Core.Application.DTOs.Commercial.LigneLeadReadDto                                      100%
+  StockManager.Core.Application.DTOs.Commercial.UpdateLeadStatutDto                                   100%
+  StockManager.Core.Application.DTOs.ContactRequestCreateDto                                            0%
+  StockManager.Core.Application.DTOs.ContactRequestReadDto                                              0%
+  StockManager.Core.Application.DTOs.Documents.BonCommandePdfDto                                        0%
+  StockManager.Core.Application.DTOs.Documents.BonLivraisonPdfDto                                       0%
+  StockManager.Core.Application.DTOs.Documents.DevisPdfDto                                              0%
+  StockManager.Core.Application.DTOs.Documents.DocumentLinePdfDto                                       0%
+  StockManager.Core.Application.DTOs.EquipmentCatalogDetailDto                                          0%
+  StockManager.Core.Application.DTOs.EquipmentCatalogItemDto                                            0%
+  StockManager.Core.Application.DTOs.EquipmentCreateDto                                                 0%
+  StockManager.Core.Application.DTOs.EquipmentListItemDto                                               0%
+  StockManager.Core.Application.DTOs.EquipmentReadDto                                                   0%
+  StockManager.Core.Application.DTOs.LoginRequestDto                                                    0%
+  StockManager.Core.Application.DTOs.LoginResponseDto                                                   0%
+  StockManager.Core.Application.DTOs.PagedResultDto<T>                                                  0%
+  StockManager.Core.Application.DTOs.PhotoDto                                                           0%
+  StockManager.Core.Application.DTOs.Stock.CreateMouvementDto                                          50%
+  StockManager.Core.Application.DTOs.Stock.MouvementStockReadDto                                        0%
+  StockManager.Core.Application.DTOs.StockMovementCreateDto                                             0%
+  StockManager.Core.Application.DTOs.StockMovementReadDto                                               0%
+  StockManager.Core.Application.DTOs.UserCreateDto                                                      0%
+  StockManager.Core.Application.DTOs.UserReadDto                                                        0%
+  StockManager.Core.Application.DTOs.UserUpdateDto                                                      0%
+  StockManager.Core.Application.Mapping.MappingProfile                                                100%
+  StockManager.Core.Application.Services.Catalogue.ArticleDynamicFieldService                           0%
+  StockManager.Core.Application.Services.Catalogue.ArticleEtatDetailService                             0%
+  StockManager.Core.Application.Services.Catalogue.CataloguePublicService                               0%
+  StockManager.Core.Application.Services.Catalogue.ChampSpecifiqueService                               0%
+  StockManager.Core.Application.Services.LeadService                                                 91.4%
+  StockManager.Core.Application.Services.OrderService                                                   0%
+  StockManager.Core.Application.Services.StockService                                                79.4%
+  StockManager.Core.Application.Services.StockServiceV2                                                 0%
+  StockManager.Core.Application.Services.StockServiceV3                                              12.7%
+  StockManager.Core.Domain.Entities.Catalogue.ArticleChampValeur                                        0%
+  StockManager.Core.Domain.Entities.Catalogue.ArticleEtatDetail                                         0%
+  StockManager.Core.Domain.Entities.Catalogue.ChampSpecifique                                           0%
+  StockManager.Core.Domain.Entities.Catalogue.Famille                                                   0%
+  StockManager.Core.Domain.Entities.Category                                                           75%
+  StockManager.Core.Domain.Entities.Commercial.BonCommande                                              0%
+  StockManager.Core.Domain.Entities.Commercial.BonLivraison                                             0%
+  StockManager.Core.Domain.Entities.Commercial.Client                                                 100%
+  StockManager.Core.Domain.Entities.Commercial.Lead                                                  91.6%
+  StockManager.Core.Domain.Entities.Commercial.LigneBC                                                  0%
+  StockManager.Core.Domain.Entities.Commercial.LigneBL                                                  0%
+  StockManager.Core.Domain.Entities.Commercial.LigneLead                                             85.7%
+  StockManager.Core.Domain.Entities.ContactRequest                                                      0%
+  StockManager.Core.Domain.Entities.Equipment                                                        61.5%
+  StockManager.Core.Domain.Entities.Photo                                                               0%
+  StockManager.Core.Domain.Entities.Stock.AlerteStock                                                   0%
+  StockManager.Core.Domain.Entities.Stock.Depot                                                         0%
+  StockManager.Core.Domain.Entities.Stock.Lot                                                           0%
+  StockManager.Core.Domain.Entities.Stock.NumeroSerie                                                   0%
+  StockManager.Core.Domain.Entities.Stock.StockQuantite                                                 0%
+  StockManager.Core.Domain.Entities.StockMovement                                                    52.6%
+  StockManager.Core.Domain.Entities.User                                                                0%
+  StockManager.Core.Domain.Enums.StockAlertHelper                                                       0%
+  StockManager.Core.Domain.Exceptions.ConflictException                                               100%
+  StockManager.Core.Domain.Exceptions.DomainException                                                 100%
+  StockManager.Core.Domain.Exceptions.ForbiddenException                                              100%
+  StockManager.Core.Domain.Exceptions.NotFoundException                                                50%
+
+StockManager.Infrastructure                                                                           3.1%
+  StockManager.Infrastructure.Persistence.Configurations.Catalogue.ArticleChampValeurConfiguration    100%
+  StockManager.Infrastructure.Persistence.Configurations.Catalogue.ArticleEtatDetailConfiguration     100%
+  StockManager.Infrastructure.Persistence.Configurations.Catalogue.ChampSpecifiqueConfiguration       100%
+  StockManager.Infrastructure.Persistence.Configurations.Catalogue.FamilleConfiguration               100%
+  StockManager.Infrastructure.Persistence.Configurations.CategoryConfiguration                        100%
+  StockManager.Infrastructure.Persistence.Configurations.Commercial.BonCommandeConfiguration          100%
+  StockManager.Infrastructure.Persistence.Configurations.Commercial.BonLivraisonConfiguration         100%
+  StockManager.Infrastructure.Persistence.Configurations.Commercial.ClientConfiguration               100%
+  StockManager.Infrastructure.Persistence.Configurations.Commercial.LeadConfiguration                 100%
+  StockManager.Infrastructure.Persistence.Configurations.Commercial.LigneBCConfiguration              100%
+  StockManager.Infrastructure.Persistence.Configurations.Commercial.LigneBLConfiguration              100%
+  StockManager.Infrastructure.Persistence.Configurations.Commercial.LigneLeadConfiguration            100%
+  StockManager.Infrastructure.Persistence.Configurations.ContactRequestConfiguration                  100%
+  StockManager.Infrastructure.Persistence.Configurations.EquipmentConfiguration                       100%
+  StockManager.Infrastructure.Persistence.Configurations.PhotoConfiguration                           100%
+  StockManager.Infrastructure.Persistence.Configurations.Stock.AlerteStockConfiguration               100%
+  StockManager.Infrastructure.Persistence.Configurations.Stock.DepotConfiguration                     100%
+  StockManager.Infrastructure.Persistence.Configurations.Stock.LotConfiguration                       100%
+  StockManager.Infrastructure.Persistence.Configurations.Stock.NumeroSerieConfiguration               100%
+  StockManager.Infrastructure.Persistence.Configurations.Stock.StockQuantiteConfiguration             100%
+  StockManager.Infrastructure.Persistence.Configurations.StockMovementConfiguration                   100%
+  StockManager.Infrastructure.Persistence.Configurations.UserConfiguration                            100%
+  StockManager.Infrastructure.Persistence.Migrations.AddClientAuthFields                                0%
+  StockManager.Infrastructure.Persistence.Migrations.AddTraceabiliteToMouvement                         0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase1_AddColumnsToExisting                     0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase1_CreateCoreStockTables                    0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase1_SeedInitialStockQuantites                0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase2_AddLotAndSerialFkToMovements             0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase2_CreateLotAndNumeroSerieTables            0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase3_CreateCommercialTables                   0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase4_CreateOrderAndDeliveryTables             0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase5_CreateEavTables                          0%
+  StockManager.Infrastructure.Persistence.Migrations.ErpPhase6_CreateArticleEtatDetail                  0%
+  StockManager.Infrastructure.Persistence.Migrations.InitialReal                                        0%
+  StockManager.Infrastructure.Persistence.Migrations.StockManagementDbContextModelSnapshot              0%
+  StockManager.Infrastructure.Persistence.Repositories.AlerteStockRepository                            0%
+  StockManager.Infrastructure.Persistence.Repositories.ArticleChampValeurRepository                     0%
+  StockManager.Infrastructure.Persistence.Repositories.ArticleEtatDetailRepository                      0%
+  StockManager.Infrastructure.Persistence.Repositories.BonCommandeRepository                            0%
+  StockManager.Infrastructure.Persistence.Repositories.BonLivraisonRepository                           0%
+  StockManager.Infrastructure.Persistence.Repositories.CategoryRepository                               0%
+  StockManager.Infrastructure.Persistence.Repositories.ChampSpecifiqueRepository                        0%
+  StockManager.Infrastructure.Persistence.Repositories.ClientRepository                              66.6%
+  StockManager.Infrastructure.Persistence.Repositories.ContactRequestRepository                         0%
+  StockManager.Infrastructure.Persistence.Repositories.EquipmentRepository                              0%
+  StockManager.Infrastructure.Persistence.Repositories.FamilleRepository                                0%
+  StockManager.Infrastructure.Persistence.Repositories.LeadRepository                                36.3%
+  StockManager.Infrastructure.Persistence.Repositories.LotRepository                                    0%
+  StockManager.Infrastructure.Persistence.Repositories.NumeroSerieRepository                            0%
+  StockManager.Infrastructure.Persistence.Repositories.StockMovementRepository                          0%
+  StockManager.Infrastructure.Persistence.Repositories.StockQuantiteRepository                          0%
+  StockManager.Infrastructure.Persistence.Repositories.UnitOfWork                                       0%
+  StockManager.Infrastructure.Persistence.Repositories.UserRepository                                   0%
+  StockManager.Infrastructure.Persistence.StockManagementDbContext                                   41.3%
+  StockManager.Infrastructure.Services.DocumentPdfService                                               0%
+  StockManager.Infrastructure.Services.EmailService                                                     0%
