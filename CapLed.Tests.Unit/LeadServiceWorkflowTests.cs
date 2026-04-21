@@ -113,7 +113,7 @@ public class LeadServiceWorkflowTests
 
         Func<Task> act = async () => await _sut.UpdateStatutAsync(2, new UpdateLeadStatutDto { Statut = "ACCEPTE" });
 
-        await act.Should().ThrowAsync<Exception>().WithMessage("*Transition de statut invalide*");
+        await act.Should().ThrowAsync<DomainException>().WithMessage("*Transition de statut invalide*");
     }
 
     [Fact]
@@ -127,14 +127,14 @@ public class LeadServiceWorkflowTests
     }
 
     [Fact]
-    public async Task UpdateStatutAsync_EN_COURS_to_DEVIS_ENVOYE_Succeeds()
+    public async Task UpdateStatutAsync_EN_COURS_to_ACCEPTE_Succeeds()
     {
         var lead = new Lead { Id = 3, Statut = "EN_COURS", DateTraitement = DateTime.UtcNow };
         _leadRepoMock.Setup(x => x.GetByIdAsync(3)).ReturnsAsync(lead);
 
-        var result = await _sut.UpdateStatutAsync(3, new UpdateLeadStatutDto { Statut = "DEVIS_ENVOYE" });
+        var result = await _sut.UpdateStatutAsync(3, new UpdateLeadStatutDto { Statut = "ACCEPTE" });
 
-        result.Statut.Should().Be("DEVIS_ENVOYE");
+        result.Statut.Should().Be("ACCEPTE");
     }
 
     [Fact]
@@ -145,6 +145,6 @@ public class LeadServiceWorkflowTests
 
         Func<Task> act = async () => await _sut.UpdateStatutAsync(4, new UpdateLeadStatutDto { Statut = "REFUSE" });
 
-        await act.Should().ThrowAsync<Exception>().WithMessage("*Transition de statut invalide*");
+        await act.Should().ThrowAsync<DomainException>().WithMessage("*Transition de statut invalide*");
     }
 }

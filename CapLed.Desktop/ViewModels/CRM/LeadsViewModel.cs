@@ -42,13 +42,15 @@ public class LeadsViewModel : BaseViewModel
         "Tous",
         "NOUVEAU",
         "EN_COURS",
-        "DEVIS_ENVOYE",
         "ACCEPTE",
         "REFUSE"
     };
 
     public ICommand SearchCommand { get; }
-    public ICommand UpdateStatusCommand { get; }
+    public ICommand PrendreEnChargeCommand { get; }
+    public ICommand AccepterDevisCommand { get; }
+    public ICommand RefuserDevisCommand { get; }
+    public ICommand CreerCommandeCommand { get; }
 
     public LeadsViewModel(CrmApiClient crmApiClient, AuthService authService, IConfirmationService confirmation)
     {
@@ -59,8 +61,13 @@ public class LeadsViewModel : BaseViewModel
         SelectedStatus = "Tous";
 
         SearchCommand = new AsyncRelayCommand(LoadLeadsAsync);
-        UpdateStatusCommand = new AsyncRelayCommand(async param => 
-            await UpdateStatusAsync((LeadModel?)param));
+        PrendreEnChargeCommand = new AsyncRelayCommand(async param => await BaseUpdateStatusAsync((LeadModel?)param, "EN_COURS"));
+        AccepterDevisCommand = new AsyncRelayCommand(async param => await AskAndSetStatusAsync((LeadModel?)param, "ACCEPTE", "Voulez-vous accepter ce devis ? (Action irréversible)"));
+        RefuserDevisCommand = new AsyncRelayCommand(async param => await AskAndSetStatusAsync((LeadModel?)param, "REFUSE", "Voulez-vous refuser ce devis ? (Action irréversible)"));
+        
+        CreerCommandeCommand = new RelayCommand(param => 
+            _confirmation.ShowError("Simulation ERP", "Le composant 'Créer Bon de Commande' n'est pas encore implémenté (Phase Documents ERP).")
+        );
     }
 
     public async Task LoadLeadsAsync()
@@ -91,26 +98,30 @@ public class LeadsViewModel : BaseViewModel
         }
     }
 
-    private async Task UpdateStatusAsync(LeadModel? lead)
+    private async Task AskAndSetStatusAsync(LeadModel? lead, string targetStatus, string question)
     {
         if (lead == null) return;
+        
+        if (_confirmation.Confirm("Confirmation", question))
+        {
+            await BaseUpdateStatusAsync(lead, targetStatus);
+        }
+    }
 
-        // Simplify for demonstration: just switch status in a cycle or to EN_COURS
-        var nextStatus = lead.Statut == "NOUVEAU" ? "EN_COURS" :
-                         lead.Statut == "EN_COURS" ? "DEVIS_ENVOYE" :
-                         lead.Statut == "DEVIS_ENVOYE" ? "ACCEPTE" : lead.Statut;
-
-        if (nextStatus == lead.Statut) return;
+    private async Task BaseUpdateStatusAsync(LeadModel? lead, string targetStatus)
+    {
+        if (lead == null || targetStatus == lead.Statut) return;
 
         try
         {
-            await _crmApiClient.UpdateLeadStatusAsync(lead.Id, nextStatus);
-            lead.Statut = nextStatus;
+            await _crmApiClient.UpdateLeadStatusAsync(lead.Id, targetStatus);
+            lead.Statut = targetStatus;
             
             // Force UI update
             var index = Leads.IndexOf(lead);
             if (index >= 0)
             {
+                // Assign a completely new instance or re-assign to trigger notification on ObservableCollection indexer
                 Leads[index] = lead;
             }
         }

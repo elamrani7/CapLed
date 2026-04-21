@@ -121,13 +121,12 @@ public class LeadService : ILeadService
         var allowed = new Dictionary<string, string[]>
         {
             ["NOUVEAU"]      = ["EN_COURS", "REFUSE"],
-            ["EN_COURS"]     = ["DEVIS_ENVOYE", "REFUSE"],
-            ["DEVIS_ENVOYE"] = ["ACCEPTE", "REFUSE"],
+            ["EN_COURS"]     = ["ACCEPTE", "REFUSE"],
             ["ACCEPTE"]      = [],
             ["REFUSE"]       = []
         };
 
         if (!allowed.TryGetValue(current, out var nexts) || !nexts.Contains(next))
-            throw new Exception($"Transition de statut invalide: {current} → {next}.");
+            throw new DomainException("INVALID_STATUS_TRANSITION", $"Transition de statut invalide: {current} → {next}.");
     }
 }
