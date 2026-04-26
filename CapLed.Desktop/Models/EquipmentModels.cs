@@ -82,6 +82,6 @@ public class PhotoModel
 {
     public int Id { get; set; }
     public string Url { get; set; } = string.Empty;
-    public string FullUrl => $"http://localhost:5000{Url}";
+    public string FullUrl => $"https://capled-api.onrender.com{Url}";
     public bool IsPrimary { get; set; }
 }

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const httpClient = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: 'https://capled-api.onrender.com',
   timeout: 8000,
   headers: {
     'Content-Type': 'application/json',

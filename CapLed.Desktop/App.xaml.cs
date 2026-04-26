@@ -24,8 +24,7 @@ public partial class App : Application
 
     private void ConfigureServices(IServiceCollection services)
     {
-        // ── Services ────────────────────────────────────────────────────
-        services.AddSingleton(new HttpClient { BaseAddress = new Uri("http://localhost:5000/") });
+        services.AddSingleton(new HttpClient { BaseAddress = new Uri("https://capled-api.onrender.com/") });
         services.AddSingleton<IConfirmationService, WpfConfirmationService>();
         
         services.AddSingleton<EquipmentService>();

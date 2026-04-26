@@ -16,7 +16,7 @@ export const ProductCard = ({ product }: { product: any }) => {
       <div className="pf-product-image-wrap">
         {hasImage ? (
           <img
-            src={`http://localhost:5000${product.urlImagePrincipale}`}
+            src={`https://capled-api.onrender.com${product.urlImagePrincipale}`}
             alt={product.nom}
             style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '12px' }}
           />

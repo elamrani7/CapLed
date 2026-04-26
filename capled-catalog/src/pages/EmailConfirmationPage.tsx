@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'https://capled-api.onrender.com';
 
 export const EmailConfirmationPage = () => {
   const [searchParams] = useSearchParams();

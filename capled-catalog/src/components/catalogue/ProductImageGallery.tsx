@@ -32,7 +32,7 @@ export const ProductImageGallery = ({ images, reference }: ProductImageGalleryPr
               }`}
               style={{ width: '80px', height: '80px', transition: 'all 0.2s' }}
             >
-              <img src={`http://localhost:5000${img}`} alt={`${reference} vue ${idx + 1}`} className="w-100 h-100 object-fit-cover" />
+              <img src={`https://capled-api.onrender.com${img}`} alt={`${reference} vue ${idx + 1}`} className="w-100 h-100 object-fit-cover" />
             </button>
           ))}
         </div>
@@ -42,7 +42,7 @@ export const ProductImageGallery = ({ images, reference }: ProductImageGalleryPr
       <div className="col flex-grow-1">
         <div className="bg-white border rounded overflow-hidden shadow-sm d-flex align-items-center justify-content-center p-3" style={{ height: '400px' }}>
           <img 
-            src={`http://localhost:5000${mainImage}`} 
+            src={`https://capled-api.onrender.com${mainImage}`} 
             alt={`Aperçu ${reference}`} 
             className="w-100 h-100 object-fit-contain"
           />
