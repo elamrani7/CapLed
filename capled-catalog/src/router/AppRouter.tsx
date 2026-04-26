@@ -8,6 +8,7 @@ import { SuccessPage } from '../pages/SuccessPage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { LoginPage } from '../pages/LoginPage';
 import { EmailConfirmationPage } from '../pages/EmailConfirmationPage';
+import { ContactPage } from '../pages/ContactPage';
 
 export const AppRouter = () => {
   return (
@@ -21,6 +22,7 @@ export const AppRouter = () => {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/confirm-email" element={<EmailConfirmationPage />} />
+      <Route path="/contact" element={<ContactPage />} />
     </Routes>
   );
 };

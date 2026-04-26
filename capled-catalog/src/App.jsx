@@ -9,6 +9,15 @@ function App() {
       <CartProvider>
         <BrowserRouter>
           <AppRouter />
+          {/* WhatsApp floating button — PartFinder style */}
+          <a
+            href="https://wa.me/212702380380"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pf-whatsapp"
+            title="Contactez-nous sur WhatsApp">
+            <i className="bi bi-whatsapp"></i>
+          </a>
         </BrowserRouter>
       </CartProvider>
     </AuthProvider>

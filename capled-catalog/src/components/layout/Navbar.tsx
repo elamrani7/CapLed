@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { catalogueApi } from '../../api/catalogueApi';
@@ -8,186 +8,199 @@ export const Navbar = () => {
   const { totalItems } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
-  
+  const location = useLocation();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSearchFamille, setSelectedSearchFamille] = useState('');
-  
-  // Header data
+  const [selectedFamille, setSelectedFamille] = useState('');
   const [familles, setFamilles] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [hoveredFamille, setHoveredFamille] = useState<number | null>(null);
+  const [showFamillesDropdown, setShowFamillesDropdown] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchNavData = async () => {
-      try {
-        const fams = await catalogueApi.getFamilles();
-        const cats = await catalogueApi.getCategories();
-        if (isMounted) {
-          setFamilles(Array.isArray(fams) ? fams : []);
-          setCategories(Array.isArray(cats) ? cats : []);
-        }
-      } catch (err) {
-        console.warn('Could not load menu items', err);
-      }
-    };
-    fetchNavData();
-    return () => { isMounted = false; };
+    let mounted = true;
+    catalogueApi.getFamilles()
+      .then(f => { if (mounted) setFamilles(Array.isArray(f) ? f : []); })
+      .catch(() => {});
+    return () => { mounted = false; };
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim() || selectedSearchFamille) {
-      const params = new URLSearchParams();
-      if (searchQuery.trim()) params.append('search', searchQuery.trim());
-      if (selectedSearchFamille) params.append('familleId', selectedSearchFamille);
-      
-      navigate(`/catalogue?${params.toString()}`);
-      setSearchQuery('');
-    }
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.append('search', searchQuery.trim());
+    if (selectedFamille) params.append('familleId', selectedFamille);
+    navigate(`/catalogue?${params.toString()}`);
+    setSearchQuery('');
   };
 
+  const isActive = (path: string) =>
+    location.pathname === path ? 'pf-nav-link active' : 'pf-nav-link';
+
   return (
-    <header>
-      {/* TIER 1 - Main Search Header */}
-      <div className="autodoc-tier1">
-        <div className="container-fluid px-4">
-          <div className="row align-items-center">
-            
-            {/* Logo Left */}
-            <div className="col-12 col-lg-2 mb-3 mb-lg-0 d-flex justify-content-center justify-content-lg-start align-items-center">
-              <Link to="/" className="text-white text-decoration-none d-flex align-items-center gap-2 fw-bolder fs-3">
-                <i className="bi bi-gear-wide-connected" style={{ color: '#ff7a00' }}></i>
-                CapLed
-              </Link>
+    <header className="pf-navbar" style={{ boxShadow: scrolled ? '0 2px 12px rgba(0,0,0,0.1)' : '0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div className="container-xl">
+        {/* ── Main Row ── */}
+        <div className="pf-nav-inner">
+          {/* Logo */}
+          <Link to="/" className="text-decoration-none d-flex align-items-center gap-2 flex-shrink-0">
+            <div className="bg-primary text-white rounded d-flex align-items-center justify-content-center flex-shrink-0"
+              style={{ width: 34, height: 34, fontSize: '1.1rem' }}>
+              <i className="bi bi-gears"></i>
             </div>
+            <span>
+              <span className="pf-logo-part">Part</span>
+              <span className="pf-logo-name"> Finder</span>
+              <span className="pf-logo-part" style={{ fontSize: '1rem' }}> .ma</span>
+            </span>
+          </Link>
 
-            {/* Center Massive Search */}
-            <div className="col-12 col-lg-7 mb-3 mb-lg-0">
-              <form onSubmit={handleSearchSubmit}>
-                <div className="autodoc-search-container shadow-sm">
-                  {/* Left Dropdown attached to search bar */}
-                  <select 
-                    className="autodoc-search-select d-none d-md-block"
-                    value={selectedSearchFamille}
-                    onChange={(e) => setSelectedSearchFamille(e.target.value)}
-                  >
-                    <option value="">Vos équipements</option>
+          {/* Desktop Nav */}
+          <nav className="d-none d-lg-flex">
+            <ul className="pf-nav-links">
+              <li><Link to="/" className={isActive('/')}>Accueil</Link></li>
+
+              {/* Familles dropdown */}
+              <li className="pf-nav-dropdown"
+                onMouseEnter={() => setShowFamillesDropdown(true)}
+                onMouseLeave={() => setShowFamillesDropdown(false)}>
+                <span className="pf-nav-link" style={{ cursor: 'pointer', userSelect: 'none' }}>
+                  Familles&nbsp;<i className="bi bi-chevron-down" style={{ fontSize: '0.65rem' }}></i>
+                </span>
+                {showFamillesDropdown && familles.length > 0 && (
+                  <div className="pf-nav-dropdown-menu">
                     {familles.map(f => (
-                      <option key={f.id} value={f.id}>{f.libelle || f.code}</option>
+                      <Link key={f.id} to={`/catalogue?familleId=${f.id}`}
+                        className="pf-nav-dropdown-item"
+                        onClick={() => setShowFamillesDropdown(false)}>
+                        <i className="bi bi-tools" style={{ color: 'var(--pf-navy)', opacity: 0.5 }}></i>
+                        {f.libelle || f.code}
+                      </Link>
                     ))}
-                  </select>
-                  
-                  {/* Free text input */}
-                  <input 
-                    type="text" 
-                    className="autodoc-search-input" 
-                    placeholder="Entrez le numéro ou le nom de la pièce"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  
-                  {/* Big Search Action */}
-                  <button type="submit" className="autodoc-search-btn">
-                    <i className="bi bi-search d-block d-sm-none"></i>
-                    <span className="d-none d-sm-block"><i className="bi bi-search me-2"></i> RECHERCHER</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Right Actions */}
-            <div className="col-12 col-lg-3 d-flex justify-content-center justify-content-lg-end align-items-center gap-4">
-              
-              <Link to="/cart" className="text-white text-decoration-none d-flex align-items-center gap-3">
-                <div className="position-relative">
-                  <i className="bi bi-cart3 fs-3"></i>
-                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark border border-dark">
-                    {totalItems}
-                  </span>
-                </div>
-                <div className="d-none d-xl-block lh-sm text-start">
-                  <small className="text-secondary d-block" style={{ fontSize: '0.75rem' }}>article(s)</small>
-                  <span className="fw-bolder">Devis</span>
-                </div>
-              </Link>
-
-              {isAuthenticated ? (
-                <div className="dropdown">
-                  <div className="text-white d-flex align-items-center gap-3 dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ cursor: 'pointer' }}>
-                    <i className="bi bi-person-check-fill fs-3" style={{ color: '#2ECC71' }}></i>
-                    <div className="d-none d-xl-block lh-sm text-start">
-                      <span className="fw-bolder d-block text-light" style={{ fontSize: '0.85rem' }}>{user?.fullName}</span>
-                      <small className="text-success" style={{ fontSize: '0.75rem' }}>Connecté</small>
-                    </div>
-                  </div>
-                  <ul className="dropdown-menu dropdown-menu-end shadow border-0">
-                    <li><span className="dropdown-item-text text-muted small"><i className="bi bi-envelope me-2"></i>{user?.email}</span></li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li>
-                      <button className="dropdown-item text-danger" onClick={() => { logout(); navigate('/'); }}>
-                        <i className="bi bi-box-arrow-left me-2"></i>Se déconnecter
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              ) : (
-                <Link to="/login" className="text-white text-decoration-none d-flex align-items-center gap-3">
-                  <i className="bi bi-person-circle fs-3 text-secondary"></i>
-                  <div className="d-none d-xl-block lh-sm text-start">
-                    <span className="fw-bolder d-block text-light" style={{ fontSize: '0.85rem' }}>Mon Espace</span>
-                    <small className="text-secondary" style={{ fontSize: '0.75rem' }}>Se connecter</small>
-                  </div>
-                </Link>
-              )}
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* TIER 2 - Horizontal Family Navigation */}
-      <div className="autodoc-tier2">
-        <div className="container-fluid px-4">
-          <ul className="autodoc-nav-list">
-            <li className="autodoc-nav-item border-end border-secondary border-opacity-25">
-              <Link to="/catalogue" className="autodoc-nav-link text-white fw-bold">
-                <i className="bi bi-ui-radios-grid me-1"></i> Tous les équipements
-              </Link>
-            </li>
-            {familles.map(f => (
-              <li 
-                className="autodoc-nav-item dropdown dropdown-hover" 
-                key={f.id}
-                onMouseEnter={() => setHoveredFamille(f.id)}
-                onMouseLeave={() => setHoveredFamille(null)}
-              >
-                <Link 
-                  to={`/catalogue?familleId=${f.id}`} 
-                  className="autodoc-nav-link"
-                >
-                  <i className="bi bi-tools opacity-50"></i> {f.libelle || f.code}
-                </Link>
-                {hoveredFamille === f.id && (
-                  <div className="dropdown-menu show shadow mt-0 border-0 rounded-0" style={{ position: 'absolute', minWidth: '300px', zIndex: 1050 }}>
-                    {categories.filter(c => c.familleId === f.id).length > 0 ? (
-                      categories.filter(c => c.familleId === f.id).map(cat => (
-                        <Link 
-                          key={cat.id} 
-                          to={`/catalogue?familleId=${f.id}&categorieId=${cat.id}`} 
-                          className="dropdown-item py-2 fw-medium"
-                        >
-                          {cat.label}
-                        </Link>
-                      ))
-                    ) : (
-                      <span className="dropdown-item text-muted disabled">Découvrir cette famille</span>
-                    )}
                   </div>
                 )}
               </li>
-            ))}
-          </ul>
+
+              <li><Link to="/catalogue" className={isActive('/catalogue')}>Catalogue</Link></li>
+              <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
+              <li>
+                <Link to={isAuthenticated ? '/cart' : '/login'} className={isActive('/login')}>
+                  {isAuthenticated ? 'Mon Espace' : 'Connexion'}
+                </Link>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Right actions */}
+          <div className="d-flex align-items-center gap-2">
+            <Link to="/cart" className="pf-cart-btn text-decoration-none">
+              <i className="bi bi-cart3" style={{ fontSize: '1.2rem' }}></i>
+              {totalItems > 0 && <span className="pf-cart-badge">{totalItems}</span>}
+              <span className="d-none d-xl-inline" style={{ color: 'var(--pf-gray-800)' }}>Devis</span>
+            </Link>
+
+            {isAuthenticated ? (
+              <div className="dropdown">
+                <div className="d-flex align-items-center gap-2 px-2 py-1 rounded" role="button"
+                  data-bs-toggle="dropdown" style={{ cursor: 'pointer' }}>
+                  <i className="bi bi-person-check-fill" style={{ color: 'var(--pf-green)', fontSize: '1.15rem' }}></i>
+                  <span className="d-none d-lg-inline fw-semibold" style={{ fontSize: 'var(--text-sm)' }}>
+                    {user?.fullName?.split(' ')[0]}
+                  </span>
+                  <i className="bi bi-chevron-down" style={{ fontSize: '0.65rem', opacity: 0.5 }}></i>
+                </div>
+                <ul className="dropdown-menu dropdown-menu-end shadow border-0" style={{ borderRadius: '10px', marginTop: '6px' }}>
+                  <li><span className="dropdown-item-text" style={{ fontSize: 'var(--text-xs)', color: 'var(--pf-gray-400)' }}>
+                    {user?.email}
+                  </span></li>
+                  <li><hr className="dropdown-divider my-1" /></li>
+                  <li>
+                    <button className="dropdown-item text-danger" style={{ fontSize: 'var(--text-sm)' }}
+                      onClick={() => { logout(); navigate('/'); }}>
+                      <i className="bi bi-box-arrow-left me-2"></i>Se déconnecter
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <Link to="/contact" className="pf-btn-contact d-none d-md-inline-flex">
+                <i className="bi bi-telephone-fill"></i>
+                Nous contacter
+              </Link>
+            )}
+
+            {/* Mobile toggle */}
+            <button className="d-lg-none btn btn-sm border-0 p-1" onClick={() => setMobileOpen(o => !o)}>
+              <i className={`bi ${mobileOpen ? 'bi-x-lg' : 'bi-list'} fs-4`}></i>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileOpen && (
+          <div className="border-top py-3 d-lg-none">
+            <form onSubmit={handleSearch} className="mb-3">
+              <div className="input-group input-group-sm">
+                <input type="text" className="form-control" placeholder="Rechercher..."
+                  value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                <button type="submit" className="btn btn-primary"><i className="bi bi-search"></i></button>
+              </div>
+            </form>
+            <nav className="d-flex flex-column gap-1">
+              {[
+                { to: '/', label: 'Accueil' },
+                { to: '/catalogue', label: 'Catalogue' },
+                { to: '/contact', label: 'Contact' },
+                { to: '/login', label: 'Connexion' },
+              ].map(({ to, label }) => (
+                <Link key={to} to={to} className="pf-nav-link">{label}</Link>
+              ))}
+              {familles.length > 0 && (
+                <>
+                  <div className="pf-nav-link fw-semibold" style={{ color: 'var(--pf-gray-400)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Familles
+                  </div>
+                  {familles.map(f => (
+                    <Link key={f.id} to={`/catalogue?familleId=${f.id}`}
+                      className="pf-nav-link ps-4" style={{ fontSize: 'var(--text-sm)' }}>
+                      <i className="bi bi-tools me-2" style={{ opacity: 0.4 }}></i>{f.libelle || f.code}
+                    </Link>
+                  ))}
+                </>
+              )}
+            </nav>
+          </div>
+        )}
+      </div>
+
+      {/* Search row — slim, always visible */}
+      <div className="pf-searchbar-row">
+        <div className="container-xl">
+          <form onSubmit={handleSearch}>
+            <div className="pf-hero-search" style={{ maxWidth: '860px', margin: '0 auto' }}>
+              <select className="pf-hero-search-select d-none d-md-block"
+                value={selectedFamille} onChange={e => setSelectedFamille(e.target.value)}>
+                <option value="">Toutes les familles</option>
+                {familles.map(f => <option key={f.id} value={f.id}>{f.libelle || f.code}</option>)}
+              </select>
+              <input type="text" className="pf-hero-search-input"
+                placeholder="Référence, désignation, marque..."
+                value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <button type="submit" className="pf-hero-search-btn">
+                <i className="bi bi-search me-1"></i>
+                <span className="d-none d-sm-inline">Rechercher</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </header>
