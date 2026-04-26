@@ -23,7 +23,7 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 EXPOSE 8080
 
-# Environment variables for database
-ENV ConnectionStrings__DefaultConnection="Server=database;Database=capled_stock;Uid=root;Pwd=root;"
+# Environment variables for database should be provided by the host (Render/Railway)
+# e.g. ConnectionStrings__DefaultConnection="Server=...;"
 
 ENTRYPOINT ["dotnet", "StockManager.API.dll"]

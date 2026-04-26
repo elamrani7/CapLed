@@ -18,6 +18,13 @@ using StockManager.Core.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Cloud Deployment: Listen on PORT environment variable if provided (e.g. Render)
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://*:{port}");
+}
+
 // Add services to the container.
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
@@ -186,11 +193,9 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<ExceptionMappingMiddleware>();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Always enable Swagger for testing the public URL
+app.UseSwagger();
+app.UseSwaggerUI();
 
 // app.UseHttpsRedirection(); // Removed to prevent CORS / Network Error issues with self-signed SSL certs on local dev
 
