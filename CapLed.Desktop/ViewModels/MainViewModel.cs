@@ -152,7 +152,7 @@ public class MainViewModel : BaseViewModel
         else if (viewModel is AlertsViewModel avm) await avm.InitializeAsync();
         else if (viewModel is UserViewModel uvm) await uvm.InitializeAsync();
         else if (viewModel is CapLed.Desktop.ViewModels.CRM.LeadsViewModel lvm) await lvm.LoadLeadsAsync();
-        else if (viewModel is CapLed.Desktop.ViewModels.CRM.DocumentsViewModel dvm) await dvm.LoadDocumentsAsync();
+        else if (viewModel is CapLed.Desktop.ViewModels.CRM.DocumentsViewModel dvm) await dvm.LoadDataAsync();
     }
 
     public async Task NavigateToEquipmentDetail(int? id = null)

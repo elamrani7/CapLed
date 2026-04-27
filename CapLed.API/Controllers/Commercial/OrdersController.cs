@@ -62,6 +62,21 @@ public class OrdersController : ControllerBase
         return Ok(bc);
     }
 
+    /// <summary>Supprimer un BC (si EN_ATTENTE).</summary>
+    [HttpDelete("bc/{id}")]
+    public async Task<ActionResult> DeleteBonCommande(int id)
+    {
+        try
+        {
+            await _orderService.DeleteBonCommandeAsync(id);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { code = "BUSINESS_RULE", message = ex.Message });
+        }
+    }
+
     /// <summary>Créer un BL (déclenche un mouvement de stock SORTIE).</summary>
     [HttpPost("bl")]
     public async Task<ActionResult<BonLivraisonReadDto>> CreateBonLivraison(CreateBonLivraisonDto dto)

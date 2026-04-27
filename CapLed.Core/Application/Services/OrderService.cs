@@ -79,7 +79,8 @@ public class OrderService : IOrderService
             Lignes = lead.Lignes.Select(ll => new LigneBC
             {
                 ArticleId = ll.ArticleId,
-                QuantiteCommandee = ll.QuantiteDemandee
+                QuantiteCommandee = ll.QuantiteDemandee,
+                PrixUnitaire = ll.Article?.PrixVente ?? 0m // Ensure we capture the price
             }).ToList()
         };
 
@@ -149,6 +150,22 @@ public class OrderService : IOrderService
             dto.NumeroDevis = bc.Lead?.NumeroDevis;
             return dto;
         }).ToList();
+    }
+
+    public async Task DeleteBonCommandeAsync(int id)
+    {
+        var bc = await _bcRepo.GetByIdAsync(id);
+        if (bc == null)
+            throw new InvalidOperationException("Bon de Commande introuvable.");
+
+        if (bc.Statut != "EN_ATTENTE" && bc.Statut != "CREE")
+            throw new InvalidOperationException($"Impossible de supprimer un Bon de Commande au statut '{bc.Statut}'. Seuls les BC en attente peuvent être supprimés.");
+
+        if (bc.BonsLivraison != null && bc.BonsLivraison.Any())
+            throw new InvalidOperationException("Impossible de supprimer ce Bon de Commande car des Bons de Livraison y sont déjà rattachés.");
+
+        await _bcRepo.DeleteAsync(bc);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     private async Task<string> GenerateNumeroAsync(string type)

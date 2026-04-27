@@ -23,7 +23,7 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Numéro BC" Binding="{Binding Numero}" Width="150" FontWeight="Bold"/>
                 <DataGridTextColumn Header="Date" Binding="{Binding DateCreation, StringFormat={}{0:dd/MM/yyyy}}" Width="100"/>
-                <DataGridTextColumn Header="Client" Binding="{Binding Client.RaisonSociale}" Width="200"/>
+                <DataGridTextColumn Header="Client" Binding="{Binding ClientNom}" Width="200"/>
                 <DataGridTextColumn Header="Montant" Binding="{Binding MontantTotal, StringFormat={}{0:C}}" Width="120"/>
                 <DataGridTextColumn Header="Statut" Binding="{Binding Statut}" Width="120"/>
 
@@ -35,6 +35,25 @@
                                         Command="{Binding DataContext.DownloadBcPdfCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                         CommandParameter="{Binding}"
                                         Margin="0,0,5,0" Padding="10,2" Background="#3B82F6" Foreground="White" BorderThickness="0"/>
+                                
+                                <Button Content="🗑️ Supprimer" 
+                                        Command="{Binding DataContext.DeleteBcCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"
+                                        Margin="0,0,5,0" Padding="10,2" Background="#EF4444" Foreground="White" BorderThickness="0">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Statut}" Value="EN_ATTENTE">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Statut}" Value="CREE">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

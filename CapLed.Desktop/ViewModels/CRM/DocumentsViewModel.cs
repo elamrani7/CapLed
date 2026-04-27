@@ -23,20 +23,50 @@ public class DocumentsViewModel : BaseViewModel
     public ICommand LoadDocumentsCommand { get; }
     public ICommand DownloadBcPdfCommand { get; }
     public ICommand DownloadBlPdfCommand { get; }
+    public ICommand DeleteBcCommand { get; }
 
     public DocumentsViewModel(DocumentApiClient documentApiClient, IConfirmationService confirmation)
     {
         _documentApiClient = documentApiClient;
         _confirmation = confirmation;
 
-        LoadDocumentsCommand = new AsyncRelayCommand(LoadDocumentsAsync);
-        DownloadBcPdfCommand = new AsyncRelayCommand(async param => 
-            await DownloadBcAsync((BonCommandeModel)param!));
-        DownloadBlPdfCommand = new AsyncRelayCommand(async param => 
-            await DownloadBlAsync((BonLivraisonModel)param!));
+        LoadDocumentsCommand = new AsyncRelayCommand(LoadDataAsync);
+        DownloadBcPdfCommand = new AsyncRelayCommand(async param => await DownloadBcAsync((BonCommandeModel?)param));
+        DownloadBlPdfCommand = new AsyncRelayCommand(async param => await DownloadBlAsync((BonLivraisonModel?)param));
+        DeleteBcCommand = new AsyncRelayCommand(async param => await DeleteBcAsync((BonCommandeModel?)param));
     }
 
-    public async Task LoadDocumentsAsync()
+    private async Task DeleteBcAsync(BonCommandeModel? bc)
+    {
+        if (bc == null) return;
+        
+        if (bc.Statut != "EN_ATTENTE" && bc.Statut != "CREE")
+        {
+            _confirmation.ShowError("Action impossible", "Seuls les Bons de Commande en attente peuvent être supprimés.");
+            return;
+        }
+
+        if (!_confirmation.Confirm("Confirmation de suppression", 
+            $"Voulez-vous vraiment supprimer le Bon de Commande {bc.Numero} ?\n\nLe devis associé redeviendra libre."))
+            return;
+
+        try
+        {
+            await _documentApiClient.DeleteBonCommandeAsync(bc.Id);
+            _confirmation.ShowInfo("Succès", "Le Bon de Commande a été supprimé avec succès.");
+            await LoadDataAsync();
+        }
+        catch (ApiException ex)
+        {
+            _confirmation.ShowError("Erreur métier", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _confirmation.ShowError("Erreur réseau", ex.Message);
+        }
+    }
+
+    public async Task LoadDataAsync()
     {
         if (IsLoading) return;
         IsLoading = true;

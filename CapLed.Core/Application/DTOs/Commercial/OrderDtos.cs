@@ -13,6 +13,7 @@ public class BonCommandeReadDto
     public string? Commentaire { get; set; }
     public int? LeadId { get; set; }
     public string? NumeroDevis { get; set; }
+    public decimal MontantTotal { get; set; }
     public List<LigneBCReadDto> Lignes { get; set; } = new();
 }
 
@@ -23,6 +24,7 @@ public class LigneBCReadDto
     public string ArticleRef { get; set; } = string.Empty;
     public string ArticleName { get; set; } = string.Empty;
     public int QuantiteCommandee { get; set; }
+    public decimal PrixUnitaire { get; set; }
 }
 
 public class CreateBonCommandeDto

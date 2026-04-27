@@ -10,4 +10,5 @@ public interface IOrderService
     Task<BonCommandeReadDto?> GetBonCommandeAsync(int id);
     Task<BonLivraisonReadDto?> GetBonLivraisonAsync(int id);
     Task<List<BonCommandeReadDto>> GetAllBonsCommandeAsync();
+    Task DeleteBonCommandeAsync(int id);
 }

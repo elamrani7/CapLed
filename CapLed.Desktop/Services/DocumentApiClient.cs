@@ -24,6 +24,11 @@ public class DocumentApiClient : ApiClientBase
         return res ?? new PagedResult<BonLivraisonModel>();
     }
 
+    public async Task DeleteBonCommandeAsync(int bcId)
+    {
+        await DeleteAsync($"api/Orders/bc/{bcId}");
+    }
+
     public async Task<byte[]> DownloadDevisPdfAsync(int leadId)
     {
         return await Http.GetByteArrayAsync($"api/v2/documents/devis/{leadId}/pdf");

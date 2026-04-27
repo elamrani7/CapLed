@@ -36,4 +36,7 @@ public class LigneBC
     public virtual Equipment Article { get; set; } = null!;
     
     public int QuantiteCommandee { get; set; }
+    
+    /// <summary>Prix unitaire de l'article au moment de la création du BC (copié depuis Equipment).</summary>
+    public decimal PrixUnitaire { get; set; }
 }

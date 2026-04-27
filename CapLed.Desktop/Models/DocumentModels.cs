@@ -1,13 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CapLed.Desktop.Models;
 
 public class BonCommandeModel
 {
     public int Id { get; set; }
+
+    [JsonPropertyName("numeroBC")]
     public string Numero { get; set; } = string.Empty;
+
+    [JsonPropertyName("dateCommande")]
     public DateTime DateCreation { get; set; }
+
+    [JsonPropertyName("clientNom")]
+    public string ClientNom { get; set; } = string.Empty;
+
     public string Statut { get; set; } = string.Empty;
     public decimal MontantTotal { get; set; }
     public ClientModel? Client { get; set; }

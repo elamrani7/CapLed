@@ -16,6 +16,7 @@ public class BonCommandeRepository : IBonCommandeRepository
             .Include(bc => bc.Client)
             .Include(bc => bc.Lignes)
                 .ThenInclude(l => l.Article)
+            .Include(bc => bc.BonsLivraison)
             .FirstOrDefaultAsync(bc => bc.Id == id);
     }
 
@@ -55,6 +56,12 @@ public class BonCommandeRepository : IBonCommandeRepository
             .Include(bc => bc.Lignes)
                 .ThenInclude(l => l.Article)
             .FirstOrDefaultAsync(bc => bc.LeadId == leadId);
+    }
+
+    public Task DeleteAsync(BonCommande bc)
+    {
+        _ctx.BonsCommande.Remove(bc);
+        return Task.CompletedTask;
     }
 }
 

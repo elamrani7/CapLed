@@ -11,6 +11,7 @@ public interface IBonCommandeRepository
     Task UpdateAsync(BonCommande bc);
     Task<string> GetLastNumeroAsync(string prefix);
     Task<BonCommande?> GetByLeadIdAsync(int leadId);
+    Task DeleteAsync(BonCommande bc);
 }
 
 public interface IBonLivraisonRepository
