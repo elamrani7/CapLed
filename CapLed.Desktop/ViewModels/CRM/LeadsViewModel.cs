@@ -47,6 +47,7 @@ public class LeadsViewModel : BaseViewModel
     };
 
     public ICommand SearchCommand { get; }
+    public ICommand RefreshCommand { get; }
     public ICommand PrendreEnChargeCommand { get; }
     public ICommand AccepterDevisCommand { get; }
     public ICommand RefuserDevisCommand { get; }
@@ -61,13 +62,12 @@ public class LeadsViewModel : BaseViewModel
         SelectedStatus = "Tous";
 
         SearchCommand = new AsyncRelayCommand(LoadLeadsAsync);
+        RefreshCommand = new AsyncRelayCommand(LoadLeadsAsync);
         PrendreEnChargeCommand = new AsyncRelayCommand(async param => await BaseUpdateStatusAsync((LeadModel?)param, "EN_COURS"));
         AccepterDevisCommand = new AsyncRelayCommand(async param => await AskAndSetStatusAsync((LeadModel?)param, "ACCEPTE", "Voulez-vous accepter ce devis ? (Action irréversible)"));
         RefuserDevisCommand = new AsyncRelayCommand(async param => await AskAndSetStatusAsync((LeadModel?)param, "REFUSE", "Voulez-vous refuser ce devis ? (Action irréversible)"));
         
-        CreerCommandeCommand = new RelayCommand(param => 
-            _confirmation.ShowError("Simulation ERP", "Le composant 'Créer Bon de Commande' n'est pas encore implémenté (Phase Documents ERP).")
-        );
+        CreerCommandeCommand = new AsyncRelayCommand(async param => await CreateBonCommandeAsync((LeadModel?)param));
     }
 
     public async Task LoadLeadsAsync()
@@ -98,6 +98,41 @@ public class LeadsViewModel : BaseViewModel
         }
     }
 
+    private async Task CreateBonCommandeAsync(LeadModel? lead)
+    {
+        if (lead == null) return;
+
+        if (lead.Statut != "ACCEPTE")
+        {
+            _confirmation.ShowError("Action impossible", "Seuls les leads au statut ACCEPTE peuvent générer un Bon de Commande.");
+            return;
+        }
+
+        if (!_confirmation.Confirm("Confirmation",
+            $"Voulez-vous créer un Bon de Commande pour le lead de {lead.NomContact} ?\n\nCette action est irréversible."))
+        {
+            return;
+        }
+
+        try
+        {
+            var bc = await _crmApiClient.CreateBonCommandeFromLeadAsync(lead.Id);
+            _confirmation.ShowInfo("Bon de Commande créé",
+                $"Le BC n°{bc?.Numero ?? "?"} a été créé avec succès.\n\nIl est maintenant visible dans Documents > Bons de Commande.");
+            
+            // Recharger la liste pour mettre à jour l'état visuel
+            await LoadLeadsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _confirmation.ShowError("Erreur de création", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _confirmation.ShowError("Erreur réseau", ex.Message);
+        }
+    }
+
     private async Task AskAndSetStatusAsync(LeadModel? lead, string targetStatus, string question)
     {
         if (lead == null) return;
@@ -121,7 +156,6 @@ public class LeadsViewModel : BaseViewModel
             var index = Leads.IndexOf(lead);
             if (index >= 0)
             {
-                // Assign a completely new instance or re-assign to trigger notification on ObservableCollection indexer
                 Leads[index] = lead;
             }
         }

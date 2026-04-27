@@ -26,4 +26,10 @@ public class CrmApiClient : ApiClientBase
     {
         await PutAsync($"v2/leads/{leadId}/statut", new UpdateLeadStatusModel { Statut = statut });
     }
+
+    /// <summary>Crée un BC depuis un Lead ACCEPTE via le workflow ERP.</summary>
+    public async Task<BonCommandeModel?> CreateBonCommandeFromLeadAsync(int leadId)
+    {
+        return await PostAsync<object, BonCommandeModel>($"api/Orders/bc/from-lead/{leadId}", new { });
+    }
 }

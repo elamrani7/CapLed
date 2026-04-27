@@ -117,6 +117,7 @@ builder.Services.AddScoped<ILeadService, LeadService>();
 // Step 4B: Orders & Deliveries
 builder.Services.AddScoped<IBonCommandeRepository, BonCommandeRepository>();
 builder.Services.AddScoped<IBonLivraisonRepository, BonLivraisonRepository>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IDocumentPdfService, DocumentPdfService>();
 builder.Services.AddScoped<IChampSpecifiqueRepository, ChampSpecifiqueRepository>();
 builder.Services.AddScoped<IArticleChampValeurRepository, ArticleChampValeurRepository>();

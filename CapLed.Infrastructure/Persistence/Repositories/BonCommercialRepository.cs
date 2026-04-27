@@ -28,7 +28,12 @@ public class BonCommandeRepository : IBonCommandeRepository
             .FirstOrDefaultAsync(bc => bc.NumeroBC == numeroBC);
     }
 
-    public Task<List<BonCommande>> GetAllAsync() => _ctx.BonsCommande.ToListAsync();
+    public Task<List<BonCommande>> GetAllAsync() => _ctx.BonsCommande
+        .Include(bc => bc.Client)
+        .Include(bc => bc.Lead)
+        .Include(bc => bc.Lignes).ThenInclude(l => l.Article)
+        .OrderByDescending(bc => bc.DateCommande)
+        .ToListAsync();
 
     public async Task AddAsync(BonCommande bc) => await _ctx.BonsCommande.AddAsync(bc);
     
@@ -41,6 +46,15 @@ public class BonCommandeRepository : IBonCommandeRepository
             .OrderByDescending(bc => bc.NumeroBC)
             .Select(bc => bc.NumeroBC)
             .FirstOrDefaultAsync() ?? string.Empty;
+    }
+
+    public async Task<BonCommande?> GetByLeadIdAsync(int leadId)
+    {
+        return await _ctx.BonsCommande
+            .Include(bc => bc.Client)
+            .Include(bc => bc.Lignes)
+                .ThenInclude(l => l.Article)
+            .FirstOrDefaultAsync(bc => bc.LeadId == leadId);
     }
 }
 

@@ -89,7 +89,7 @@ public class ExceptionMappingMiddleware
 
         context.Response.StatusCode = statusCode;
 
-        var response = new { code, message, detail = exception.Message };
+        var response = new { code, message };
         return context.Response.WriteAsync(JsonSerializer.Serialize(response, _jsonOptions));
     }
 }

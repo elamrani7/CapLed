@@ -11,6 +11,7 @@ public class OrderService : IOrderService
 {
     private readonly IBonCommandeRepository _bcRepo;
     private readonly IBonLivraisonRepository _blRepo;
+    private readonly ILeadRepository _leadRepo;
     private readonly IStockServiceV3 _stockService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
@@ -18,12 +19,14 @@ public class OrderService : IOrderService
     public OrderService(
         IBonCommandeRepository bcRepo,
         IBonLivraisonRepository blRepo,
+        ILeadRepository leadRepo,
         IStockServiceV3 stockService,
         IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _bcRepo = bcRepo;
         _blRepo = blRepo;
+        _leadRepo = leadRepo;
         _stockService = stockService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -41,16 +44,64 @@ public class OrderService : IOrderService
         return _mapper.Map<BonCommandeReadDto>(bc);
     }
 
+    /// <summary>
+    /// Crée un Bon de Commande à partir d'un Lead ACCEPTE.
+    /// Règles métier :
+    ///   - Le Lead doit exister
+    ///   - Le Lead doit avoir le statut ACCEPTE
+    ///   - Un seul BC par Lead (relation 1:1)
+    /// </summary>
+    public async Task<BonCommandeReadDto> CreateBonCommandeFromLeadAsync(int leadId)
+    {
+        // 1. Charger le Lead avec ses lignes et son client
+        var lead = await _leadRepo.GetByIdAsync(leadId);
+        if (lead == null)
+            throw new InvalidOperationException("Lead introuvable.");
+
+        // 2. Vérifier le statut
+        if (lead.Statut != "ACCEPTE")
+            throw new InvalidOperationException($"Le Lead doit être au statut ACCEPTE pour générer un BC. Statut actuel : {lead.Statut}.");
+
+        // 3. Vérifier qu'aucun BC n'existe déjà pour ce Lead
+        var existingBc = await _bcRepo.GetByLeadIdAsync(leadId);
+        if (existingBc != null)
+            throw new InvalidOperationException($"Un Bon de Commande ({existingBc.NumeroBC}) existe déjà pour ce Lead.");
+
+        // 4. Construire le BC depuis les données du Lead
+        var bc = new BonCommande
+        {
+            NumeroBC = await GenerateNumeroAsync("BC"),
+            ClientId = lead.ClientId,
+            DateCommande = DateTime.UtcNow,
+            Statut = "EN_ATTENTE",
+            LeadId = lead.Id,
+            Commentaire = $"Généré depuis le devis {lead.NumeroDevis}",
+            Lignes = lead.Lignes.Select(ll => new LigneBC
+            {
+                ArticleId = ll.ArticleId,
+                QuantiteCommandee = ll.QuantiteDemandee
+            }).ToList()
+        };
+
+        await _bcRepo.AddAsync(bc);
+        await _unitOfWork.SaveChangesAsync();
+
+        // 5. Recharger avec les navigations pour le DTO
+        var saved = await _bcRepo.GetByIdAsync(bc.Id);
+        var dto = _mapper.Map<BonCommandeReadDto>(saved);
+        dto.LeadId = lead.Id;
+        dto.NumeroDevis = lead.NumeroDevis;
+        return dto;
+    }
+
     public async Task<BonLivraisonReadDto> CreateBonLivraisonAsync(CreateBonLivraisonDto dto)
     {
         var bl = _mapper.Map<BonLivraison>(dto);
         bl.NumeroBL = await GenerateNumeroAsync("BL");
-        bl.Statut = "VALIDE"; // In a real app, maybe BROUILLON -> VALIDE
+        bl.Statut = "VALIDE";
         
-        // 1. Save the BL
         await _blRepo.AddAsync(bl);
         
-        // 2. TRIGGER STOCK SORTIE (Requirement: BL SORTIE triggers StockServiceV3 SORTIE)
         foreach (var ligne in bl.Lignes)
         {
             var movementDto = new CreateMouvementDto
@@ -58,13 +109,13 @@ public class OrderService : IOrderService
                 ArticleId = ligne.ArticleId,
                 TypeMouvement = "SORTIE",
                 Quantite = ligne.QuantiteLivree,
-                DepotSourceId = 1, // Default depot or taken from logic? Assumed 1 for now or needs to be in DTO
+                DepotSourceId = 1,
                 Remarks = $"Livraison {bl.NumeroBL}",
-                NumeroLot = null, // Needs to be looked up if needed, or taken from ligne.LotId
+                NumeroLot = null,
                 NumeroSeries = !string.IsNullOrEmpty(ligne.NumeroSerie) ? new List<string> { ligne.NumeroSerie } : new List<string>()
             };
             
-            await _stockService.CreateMouvementAsync(movementDto, 1); // Pass system user ID 1
+            await _stockService.CreateMouvementAsync(movementDto, 1);
         }
         
         await _unitOfWork.SaveChangesAsync();
@@ -75,13 +126,29 @@ public class OrderService : IOrderService
     public async Task<BonCommandeReadDto?> GetBonCommandeAsync(int id)
     {
         var bc = await _bcRepo.GetByIdAsync(id);
-        return _mapper.Map<BonCommandeReadDto>(bc);
+        if (bc == null) return null;
+        var dto = _mapper.Map<BonCommandeReadDto>(bc);
+        dto.LeadId = bc.LeadId;
+        dto.NumeroDevis = bc.Lead?.NumeroDevis;
+        return dto;
     }
 
     public async Task<BonLivraisonReadDto?> GetBonLivraisonAsync(int id)
     {
         var bl = await _blRepo.GetByIdAsync(id);
         return _mapper.Map<BonLivraisonReadDto>(bl);
+    }
+
+    public async Task<List<BonCommandeReadDto>> GetAllBonsCommandeAsync()
+    {
+        var bcs = await _bcRepo.GetAllAsync();
+        return bcs.Select(bc =>
+        {
+            var dto = _mapper.Map<BonCommandeReadDto>(bc);
+            dto.LeadId = bc.LeadId;
+            dto.NumeroDevis = bc.Lead?.NumeroDevis;
+            return dto;
+        }).ToList();
     }
 
     private async Task<string> GenerateNumeroAsync(string type)

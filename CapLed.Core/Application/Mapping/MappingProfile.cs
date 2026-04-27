@@ -96,6 +96,8 @@ public class MappingProfile : Profile
         // Step 4B: Orders & Deliveries
         CreateMap<BonCommande, BonCommandeReadDto>()
             .ForMember(dest => dest.ClientNom, opt => opt.MapFrom(src => src.Client.Nom))
+            .ForMember(dest => dest.LeadId, opt => opt.MapFrom(src => src.LeadId))
+            .ForMember(dest => dest.NumeroDevis, opt => opt.MapFrom(src => src.Lead != null ? src.Lead.NumeroDevis : null))
             .ForMember(dest => dest.Lignes, opt => opt.MapFrom(src => src.Lignes));
 
         CreateMap<CreateBonCommandeDto, BonCommande>();

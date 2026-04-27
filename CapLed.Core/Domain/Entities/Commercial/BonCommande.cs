@@ -18,6 +18,10 @@ public class BonCommande
     
     public string? Commentaire { get; set; }
     
+    /// <summary>Lead source ayant généré ce BC (relation 1:1, nullable pour BC manuels).</summary>
+    public int? LeadId { get; set; }
+    public virtual Lead? Lead { get; set; }
+    
     public virtual ICollection<LigneBC> Lignes { get; set; } = new List<LigneBC>();
     public virtual ICollection<BonLivraison> BonsLivraison { get; set; } = new List<BonLivraison>();
 }

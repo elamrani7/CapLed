@@ -11,6 +11,8 @@ public class BonCommandeReadDto
     public DateTime DateCommande { get; set; }
     public string Statut { get; set; } = string.Empty;
     public string? Commentaire { get; set; }
+    public int? LeadId { get; set; }
+    public string? NumeroDevis { get; set; }
     public List<LigneBCReadDto> Lignes { get; set; } = new();
 }
 

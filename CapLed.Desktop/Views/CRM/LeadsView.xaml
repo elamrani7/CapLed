@@ -18,6 +18,8 @@
 
             <TextBlock Text="Statut :" VerticalAlignment="Center" Margin="20,0,10,0" FontWeight="SemiBold"/>
             <ComboBox Width="150" Height="30" ItemsSource="{Binding StatusList}" SelectedItem="{Binding SelectedStatus}"/>
+
+            <Button Content="🔄 Rafraîchir" Command="{Binding RefreshCommand}" Margin="20,0,0,0" Padding="10,5" Background="#F3F4F6" BorderThickness="1" BorderBrush="#D1D5DB"/>
         </StackPanel>
 
         <DataGrid Grid.Row="2" ItemsSource="{Binding Leads}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" SelectionMode="Single">
