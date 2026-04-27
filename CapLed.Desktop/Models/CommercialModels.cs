@@ -19,7 +19,7 @@ public class LeadModel
     public string NomContact { get; set; } = string.Empty;
     public string EmailContact { get; set; } = string.Empty;
     public string? TelephoneContact { get; set; }
-    public string? MessageInitial { get; set; }
+    public string? MessageClient { get; set; }
     public DateTime DateCreation { get; set; }
     public ClientModel? Client { get; set; }
     public string? CommercialNom { get; set; }

@@ -26,6 +26,9 @@ public class Lead
 
     public string? Commentaire { get; set; }
 
+    /// <summary>Message libre laissé par le client lors de la demande de devis sur le site.</summary>
+    public string? MessageClient { get; set; }
+
     /// <summary>Canal d'acquisition marketing (SEO, LINKEDIN, FACEBOOK, WHATSAPP, EMAIL, MARKETPLACE, DIRECT).</summary>
     public string SourceAcquisition { get; set; } = "DIRECT";
 

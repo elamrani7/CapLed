@@ -14,7 +14,8 @@ export const CheckoutPage = () => {
     nomProprietaire: '',
     societe: '',
     email: '',
-    telephone: ''
+    telephone: '',
+    message: ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -55,6 +56,7 @@ export const CheckoutPage = () => {
         societe: formData.societe,
         emailClient: formData.email,
         telephone: formData.telephone,
+        messageClient: formData.message,
         sourceAcquisition: "SITE_WEB",
         lignes: cartItems.map((item: any) => ({
           articleId: item.articleId,
@@ -159,6 +161,21 @@ export const CheckoutPage = () => {
                       className="form-control"
                       placeholder="01 23 45 67 89"
                     />
+                  </div>
+                  
+                  <div className="col-12">
+                    <label className="form-label fw-bold text-dark">
+                      Message complémentaire (optionnel)
+                    </label>
+                    <textarea 
+                      name="message" 
+                      value={formData.message}
+                      onChange={(e: any) => handleChange(e)}
+                      className="form-control"
+                      rows={4}
+                      maxLength={1000}
+                      placeholder="Précisez votre besoin, quantité estimée, délai souhaité, etc."
+                    ></textarea>
                   </div>
                   
                   <div className="col-12 mt-4 pt-4 border-top">

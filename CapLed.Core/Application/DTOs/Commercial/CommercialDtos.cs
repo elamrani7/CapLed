@@ -38,6 +38,7 @@ public class CreateLeadDto
     [MaxLength(200)]            public string? Societe      { get; set; }
 
     public string? Commentaire      { get; set; }
+    public string? MessageClient    { get; set; }
     public string  SourceAcquisition { get; set; } = "DIRECT";
 
     [Required] [MinLength(1, ErrorMessage = "La demande de devis doit contenir au moins un article.")]
@@ -60,6 +61,7 @@ public class LeadReadDto
     public DateTime DateSoumission   { get; set; }
     public DateTime? DateTraitement  { get; set; }
     public string?  Commentaire      { get; set; }
+    public string?  MessageClient    { get; set; }
 
     public ClientReadDto Client { get; set; } = null!;
     public string?  CommercialNom { get; set; }

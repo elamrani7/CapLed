@@ -32,7 +32,7 @@
                                 <TextBlock Text="Société : " FontWeight="SemiBold"/>
                                 <TextBlock Text="{Binding Client.RaisonSociale, TargetNullValue='(Non renseignée)'}"/>
                                 <TextBlock Text=" | Message : " FontWeight="SemiBold" Margin="15,0,0,0"/>
-                                <TextBlock Text="{Binding MessageInitial, TargetNullValue='(Aucun message)'}" TextWrapping="Wrap" MaxWidth="500"/>
+                                <TextBlock Text="{Binding MessageClient, TargetNullValue='(Aucun message)'}" TextWrapping="Wrap" MaxWidth="500"/>
                             </StackPanel>
                             
                             <DataGrid ItemsSource="{Binding Lignes}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Background="White" BorderBrush="#E5E7EB" BorderThickness="1">

@@ -64,6 +64,7 @@ public class LeadService : ILeadService
                 Statut            = "NOUVEAU",
                 DateSoumission    = DateTime.UtcNow,
                 Commentaire       = dto.Commentaire,
+                MessageClient     = dto.MessageClient,
                 SourceAcquisition = dto.SourceAcquisition,
                 Lignes = dto.Lignes.Select(l => new LigneLead
                 {
