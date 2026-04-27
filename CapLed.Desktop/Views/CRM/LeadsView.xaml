@@ -22,9 +22,32 @@
             <Button Content="🔄 Rafraîchir" Command="{Binding RefreshCommand}" Margin="20,0,0,0" Padding="10,5" Background="#F3F4F6" BorderThickness="1" BorderBrush="#D1D5DB"/>
         </StackPanel>
 
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Leads}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" SelectionMode="Single">
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Leads}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" SelectionMode="Single" RowDetailsVisibilityMode="VisibleWhenSelected">
+            <DataGrid.RowDetailsTemplate>
+                <DataTemplate>
+                    <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" Margin="10" Padding="10" CornerRadius="5">
+                        <StackPanel>
+                            <TextBlock Text="Détails du Devis" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="Société : " FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Client.RaisonSociale, TargetNullValue='(Non renseignée)'}"/>
+                                <TextBlock Text=" | Message : " FontWeight="SemiBold" Margin="15,0,0,0"/>
+                                <TextBlock Text="{Binding MessageInitial, TargetNullValue='(Aucun message)'}" TextWrapping="Wrap" MaxWidth="500"/>
+                            </StackPanel>
+                            
+                            <DataGrid ItemsSource="{Binding Lignes}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Background="White" BorderBrush="#E5E7EB" BorderThickness="1">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Référence" Binding="{Binding ArticleReference}" Width="150"/>
+                                    <DataGridTextColumn Header="Désignation" Binding="{Binding ArticleName}" Width="250"/>
+                                    <DataGridTextColumn Header="Qté Demandée" Binding="{Binding Quantite}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </DataGrid.RowDetailsTemplate>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                <DataGridTextColumn Header="Num Devis" Binding="{Binding Id}" Width="80"/>
                 <DataGridTextColumn Header="Date" Binding="{Binding DateCreation, StringFormat={}{0:dd/MM/yyyy HH:mm}}" Width="120"/>
                 <DataGridTextColumn Header="Client/Contact" Binding="{Binding NomContact}" Width="150"/>
                 <DataGridTextColumn Header="Email" Binding="{Binding EmailContact}" Width="150"/>

@@ -149,13 +149,13 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.ClientSociete, opt => opt.MapFrom(src => src.Client.Societe))
             .ForMember(dest => dest.ClientAdresse, opt => opt.MapFrom(src => src.Client.Adresse))
             .ForMember(dest => dest.Lines, opt => opt.MapFrom(src => src.Lignes))
-            .ForMember(dest => dest.TotalHT, opt => opt.MapFrom(src => 0));
+            .ForMember(dest => dest.TotalHT, opt => opt.MapFrom(src => src.Lignes.Sum(l => l.QuantiteCommandee * l.PrixUnitaire)));
 
         CreateMap<LigneBC, DocumentLinePdfDto>()
             .ForMember(dest => dest.ArticleRef, opt => opt.MapFrom(src => src.Article.Reference))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Article.Name))
             .ForMember(dest => dest.Quantite, opt => opt.MapFrom(src => src.QuantiteCommandee))
-            .ForMember(dest => dest.PrixUnitaire, opt => opt.MapFrom(src => 0));
+            .ForMember(dest => dest.PrixUnitaire, opt => opt.MapFrom(src => src.PrixUnitaire));
 
         CreateMap<BonLivraison, BonLivraisonPdfDto>()
             .ForMember(dest => dest.NumeroBL, opt => opt.MapFrom(src => src.NumeroBL))
