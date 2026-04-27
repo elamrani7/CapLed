@@ -68,7 +68,7 @@ public class LeadsV2Controller : ControllerBase
             NomContact       = l.Client != null ? $"{l.Client.Nom} {l.Client.Prenom}".Trim() : "Inconnu",
             EmailContact     = l.Client?.Email ?? "",
             TelephoneContact = l.Client?.Telephone,
-            MessageInitial   = l.Commentaire,
+            MessageClient    = l.MessageClient ?? l.Commentaire,
             DateCreation     = l.DateSoumission,
             Client = l.Client != null ? new
             {
