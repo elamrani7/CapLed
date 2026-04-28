@@ -79,18 +79,19 @@ public class LeadsViewModel : BaseViewModel
             Leads.Clear();
             var statutFilter = SelectedStatus == "Tous" ? null : SelectedStatus;
             var result = await _crmApiClient.GetLeadsAsync(1, 100, SearchQuery, statutFilter);
-            
+
             if (result?.Items != null)
-            {
                 foreach (var lead in result.Items)
-                {
                     Leads.Add(lead);
-                }
-            }
+        }
+        catch (ApiException ex)
+        {
+            // Erreur API connue : logguée silencieusement au chargement auto
+            System.Diagnostics.Debug.WriteLine($"[Leads] API error: {ex.Message}");
         }
         catch (Exception ex)
         {
-            _confirmation.ShowError("Erreur de chargement", ex.Message);
+            System.Diagnostics.Debug.WriteLine($"[Leads] Load error: {ex.Message}");
         }
         finally
         {

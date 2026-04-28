@@ -72,23 +72,22 @@ public class DocumentsViewModel : BaseViewModel
         IsLoading = true;
         try
         {
+            // Chargement BC — silencieux (GetAsyncSilent utilisé dans le client)
             BonsCommande.Clear();
             var bcResult = await _documentApiClient.GetBonsCommandeAsync(1, 100);
             if (bcResult?.Items != null)
-            {
                 foreach (var bc in bcResult.Items) BonsCommande.Add(bc);
-            }
 
+            // Chargement BL — silencieux (405 ou vide = normal, aucune popup)
             BonsLivraison.Clear();
             var blResult = await _documentApiClient.GetBonsLivraisonAsync(1, 100);
             if (blResult?.Items != null)
-            {
                 foreach (var bl in blResult.Items) BonsLivraison.Add(bl);
-            }
         }
         catch (Exception ex)
         {
-            _confirmation.ShowError("Erreur", ex.Message);
+            // Log technique uniquement — pas de popup au chargement automatique
+            System.Diagnostics.Debug.WriteLine($"[Documents] Load error: {ex.Message}");
         }
         finally
         {

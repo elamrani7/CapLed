@@ -18,7 +18,8 @@ public class CrmApiClient : ApiClientBase
         if (!string.IsNullOrEmpty(search)) url += $"&search={search}";
         if (!string.IsNullOrEmpty(statut)) url += $"&statut={statut}";
 
-        var result = await GetAsync<PagedResult<LeadModel>>(url);
+        // Appel silencieux : 401/403 = session non active, pas de popup
+        var result = await GetAsyncSilent<PagedResult<LeadModel>>(url);
         return result ?? new PagedResult<LeadModel>();
     }
 

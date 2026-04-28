@@ -14,13 +14,14 @@ public class DocumentApiClient : ApiClientBase
 
     public async Task<PagedResult<BonCommandeModel>> GetBonsCommandeAsync(int page, int pageSize)
     {
-        var res = await GetAsync<PagedResult<BonCommandeModel>>($"api/Orders/bc");
+        var res = await GetAsyncSilent<PagedResult<BonCommandeModel>>($"api/Orders/bc");
         return res ?? new PagedResult<BonCommandeModel>();
     }
 
     public async Task<PagedResult<BonLivraisonModel>> GetBonsLivraisonAsync(int page, int pageSize)
     {
-        var res = await GetAsync<PagedResult<BonLivraisonModel>>($"api/Orders/bl");
+        // Appel silencieux — l'endpoint BL peut être absent (405) ou vide : jamais affiché comme erreur.
+        var res = await GetAsyncSilent<PagedResult<BonLivraisonModel>>($"api/Orders/bl");
         return res ?? new PagedResult<BonLivraisonModel>();
     }
 

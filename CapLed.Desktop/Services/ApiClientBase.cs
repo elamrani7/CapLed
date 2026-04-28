@@ -58,12 +58,54 @@ public abstract class ApiClientBase
         }
 
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
             return default;
-        }
 
         var error = await HandleErrorResponse(response, $"GET {url}");
         throw new ApiException(error);
+    }
+
+    /// <summary>
+    /// HTTP GET silencieux — utilisé pour les appels automatiques en arrière-plan.
+    /// Retourne null sans lever d'exception pour 401, 403, 404, 405.
+    /// Les erreurs sont loggées dans la console de débogage uniquement.
+    /// </summary>
+    protected async Task<T?> GetAsyncSilent<T>(string url)
+    {
+        try
+        {
+            EnsureAuthHeader();
+            var response = await Http.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                try { return await response.Content.ReadFromJsonAsync<T>(JsonOptions); }
+                catch (JsonException ex) { System.Diagnostics.Debug.WriteLine($"[SILENT] JSON parse error {url}: {ex.Message}"); }
+                return default;
+            }
+
+            // Ces statuts sont attendus en mode silencieux → pas de popup
+            var silentStatuses = new[]
+            {
+                System.Net.HttpStatusCode.NotFound,
+                System.Net.HttpStatusCode.Unauthorized,
+                System.Net.HttpStatusCode.Forbidden,
+                System.Net.HttpStatusCode.MethodNotAllowed
+            };
+            if (Array.IndexOf(silentStatuses, response.StatusCode) >= 0)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SILENT] {(int)response.StatusCode} on GET {url} — ignored");
+                return default;
+            }
+
+            // Autres erreurs : log uniquement, pas de throw
+            System.Diagnostics.Debug.WriteLine($"[SILENT] Unexpected {(int)response.StatusCode} on GET {url}");
+            return default;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[SILENT] Network error on GET {url}: {ex.Message}");
+            return default;
+        }
     }
 
     // ─── POST ────────────────────────────────────────────────────────────────
@@ -207,7 +249,6 @@ public abstract class ApiClientBase
     protected async Task<bool> PutAsync<TRequest>(string url, TRequest body)
     {
         EnsureAuthHeader();
-        System.Diagnostics.Debug.WriteLine($"API PUT: {url}");
         var response = await Http.PutAsJsonAsync(url, body, JsonOptions);
 
         if (response.IsSuccessStatusCode) return true;
