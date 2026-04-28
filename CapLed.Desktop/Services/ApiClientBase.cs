@@ -27,7 +27,15 @@ public abstract class ApiClientBase
         Http = httpClient;
     }
 
-    private void EnsureAuthHeader()
+    /// <summary>Vérifie si la réponse est un succès, sinon lève une ApiException propre.</summary>
+    protected async Task EnsureSuccessAsync(HttpResponseMessage response, string context = "API Call")
+    {
+        if (response.IsSuccessStatusCode) return;
+        var error = await HandleErrorResponse(response, context);
+        throw new ApiException(error);
+    }
+
+    protected void EnsureAuthHeader()
     {
         var token = CapLed.Desktop.Core.AppSession.Current.JwtToken;
         if (!string.IsNullOrEmpty(token))

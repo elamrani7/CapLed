@@ -32,9 +32,10 @@ public class DocumentApiClient : ApiClientBase
 
     public async Task<BonLivraisonModel> CreateBonLivraisonFromBcAsync(int bcId, int depotId)
     {
+        EnsureAuthHeader();
         var response = await Http.PostAsync($"api/Orders/bl/from-bc/{bcId}?depotId={depotId}", null);
-        await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<BonLivraisonModel>() ?? new BonLivraisonModel();
+        await EnsureSuccessAsync(response, "Génération du BL");
+        return await response.Content.ReadFromJsonAsync<BonLivraisonModel>(JsonOptions) ?? new BonLivraisonModel();
     }
 
     public async Task<byte[]> DownloadDevisPdfAsync(int leadId)

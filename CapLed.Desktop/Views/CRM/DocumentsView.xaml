@@ -87,6 +87,7 @@
                 <DataGridTextColumn Header="Numéro BL" Binding="{Binding Numero}" Width="150" FontWeight="Bold"/>
                 <DataGridTextColumn Header="Date" Binding="{Binding DateLivraison, StringFormat={}{0:dd/MM/yyyy}}" Width="100"/>
                 <DataGridTextColumn Header="BC Associé" Binding="{Binding BonCommande.Numero}" Width="150"/>
+                <DataGridTextColumn Header="Dépôt" Binding="{Binding DepotNom}" Width="120"/>
                 <DataGridTextColumn Header="Statut" Binding="{Binding StatutLivraison}" Width="120"/>
 
                 <DataGridTemplateColumn Header="Actions" Width="*">

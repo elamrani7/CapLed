@@ -183,6 +183,16 @@ using (var scope = app.Services.CreateScope())
             adminUser.PasswordHash = hasher.HashPassword(adminUser, "Admin123!");
             await context.SaveChangesAsync();
         }
+
+        // Seed Depots (Casa & Tanger)
+        if (!await context.Depots.AnyAsync())
+        {
+            context.Depots.AddRange(
+                new Depot { Id = 1, Nom = "Casablanca", EstActif = true, CreatedAt = DateTime.UtcNow },
+                new Depot { Id = 2, Nom = "Tanger",     EstActif = true, CreatedAt = DateTime.UtcNow }
+            );
+            await context.SaveChangesAsync();
+        }
     }
     catch (Exception ex)
     {

@@ -38,6 +38,7 @@ public class BonLivraisonModel
     public string Numero { get; set; } = string.Empty;
     public DateTime? DateLivraison { get; set; }
     public string StatutLivraison { get; set; } = string.Empty;
+    public string DepotNom { get; set; } = string.Empty;
     public BonCommandeModel? BonCommande { get; set; }
     public List<LigneBlModel> Lignes { get; set; } = new();
 }
