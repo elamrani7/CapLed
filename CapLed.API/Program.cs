@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using StockManager.Core.Domain.Entities;
+using StockManager.Core.Domain.Entities.Stock;
 
 var builder = WebApplication.CreateBuilder(args);
 
