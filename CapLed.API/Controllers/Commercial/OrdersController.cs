@@ -85,6 +85,25 @@ public class OrdersController : ControllerBase
         return CreatedAtAction(nameof(GetBonLivraison), new { id = bl.Id }, bl);
     }
 
+    /// <summary>Créer un BL à partir d'un BC (déclenche SORTIE stock depuis un dépôt spécifique).</summary>
+    [HttpPost("bl/from-bc/{bcId:int}")]
+    public async Task<ActionResult<BonLivraisonReadDto>> CreateBonLivraisonFromBc(int bcId, [FromQuery] int depotId)
+    {
+        try
+        {
+            var bl = await _orderService.CreateBonLivraisonFromBcAsync(bcId, depotId);
+            return CreatedAtAction(nameof(GetBonLivraison), new { id = bl.Id }, bl);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { code = "BUSINESS_RULE", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { code = "STOCK_ERROR", message = ex.Message });
+        }
+    }
+
     [HttpGet("bl/{id}")]
     public async Task<ActionResult<BonLivraisonReadDto>> GetBonLivraison(int id)
     {

@@ -31,6 +31,12 @@ public class BonLivraisonConfiguration : IEntityTypeConfiguration<BonLivraison>
             .WithMany(bc => bc.BonsLivraison)
             .HasForeignKey(bl => bl.BonCommandeId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // FK: Depot (Mandatory for multi-warehouse tracking)
+        builder.HasOne(bl => bl.Depot)
+            .WithMany()
+            .HasForeignKey(bl => bl.DepotId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

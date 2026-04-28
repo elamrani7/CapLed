@@ -30,6 +30,13 @@ public class DocumentApiClient : ApiClientBase
         await DeleteAsync($"api/Orders/bc/{bcId}");
     }
 
+    public async Task<BonLivraisonModel> CreateBonLivraisonFromBcAsync(int bcId, int depotId)
+    {
+        var response = await Http.PostAsync($"api/Orders/bl/from-bc/{bcId}?depotId={depotId}", null);
+        await EnsureSuccessAsync(response);
+        return await response.Content.ReadFromJsonAsync<BonLivraisonModel>() ?? new BonLivraisonModel();
+    }
+
     public async Task<byte[]> DownloadDevisPdfAsync(int leadId)
     {
         return await Http.GetByteArrayAsync($"api/v2/documents/devis/{leadId}/pdf");

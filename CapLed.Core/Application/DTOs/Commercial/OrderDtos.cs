@@ -50,6 +50,11 @@ public class BonLivraisonReadDto
     public DateTime DateLivraison { get; set; }
     public string Statut { get; set; } = string.Empty;
     public string? AdresseLivraison { get; set; }
+    
+    // Multi-dépôt
+    public int DepotId { get; set; }
+    public string DepotNom { get; set; } = string.Empty;
+
     public List<LigneBLReadDto> Lignes { get; set; } = new();
 }
 
@@ -69,6 +74,10 @@ public class CreateBonLivraisonDto
     public int ClientId { get; set; }
     public string? AdresseLivraison { get; set; }
     public string? Transporteur { get; set; }
+    
+    // Multi-dépôt : Obligatoire
+    public int DepotId { get; set; }
+    
     public List<CreateLigneBLDto> Lignes { get; set; } = new();
 }
 

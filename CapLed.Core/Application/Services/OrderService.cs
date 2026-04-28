@@ -97,12 +97,16 @@ public class OrderService : IOrderService
 
     public async Task<BonLivraisonReadDto> CreateBonLivraisonAsync(CreateBonLivraisonDto dto)
     {
+        if (dto.DepotId <= 0)
+            throw new Exception("Un Dépôt d'expédition est obligatoire pour générer un Bon de Livraison.");
+
         var bl = _mapper.Map<BonLivraison>(dto);
         bl.NumeroBL = await GenerateNumeroAsync("BL");
         bl.Statut = "VALIDE";
         
         await _blRepo.AddAsync(bl);
         
+        // RG : Chaque ligne du BL déclenche une sortie de stock du dépôt sélectionné
         foreach (var ligne in bl.Lignes)
         {
             var movementDto = new CreateMouvementDto
@@ -110,18 +114,80 @@ public class OrderService : IOrderService
                 ArticleId = ligne.ArticleId,
                 TypeMouvement = "SORTIE",
                 Quantite = ligne.QuantiteLivree,
-                DepotSourceId = 1,
+                DepotSourceId = dto.DepotId,
                 Remarks = $"Livraison {bl.NumeroBL}",
-                NumeroLot = null,
+                NumeroLot = ligne.LotId?.ToString(), // or pass lot info if needed
                 NumeroSeries = !string.IsNullOrEmpty(ligne.NumeroSerie) ? new List<string> { ligne.NumeroSerie } : new List<string>()
             };
             
+            // Si le stock est insuffisant, StockServiceV3 (via V2) lèvera une exception qui annulera la transaction globale
             await _stockService.CreateMouvementAsync(movementDto, 1);
         }
         
         await _unitOfWork.SaveChangesAsync();
         
         return _mapper.Map<BonLivraisonReadDto>(bl);
+    }
+
+    public async Task<BonLivraisonReadDto> CreateBonLivraisonFromBcAsync(int bcId, int depotId)
+    {
+        if (depotId <= 0)
+            throw new InvalidOperationException("Un Dépôt d'expédition est obligatoire pour générer un Bon de Livraison.");
+
+        var bc = await _bcRepo.GetByIdAsync(bcId);
+        if (bc == null)
+            throw new InvalidOperationException("Bon de Commande introuvable.");
+
+        if (bc.Statut != "EN_ATTENTE" && bc.Statut != "CREE")
+            throw new InvalidOperationException($"Le Bon de Commande ne peut pas être livré (Statut: {bc.Statut}).");
+
+        // Construction du BL
+        var bl = new BonLivraison
+        {
+            NumeroBL = await GenerateNumeroAsync("BL"),
+            BonCommandeId = bc.Id,
+            ClientId = bc.ClientId,
+            DateLivraison = DateTime.UtcNow,
+            Statut = "VALIDE",
+            DepotId = depotId,
+            AdresseLivraison = bc.Client?.Adresse
+        };
+
+        // Transfert des lignes
+        foreach (var lbc in bc.Lignes)
+        {
+            bl.Lignes.Add(new LigneBL
+            {
+                ArticleId = lbc.ArticleId,
+                QuantiteLivree = lbc.QuantiteCommandee
+            });
+        }
+
+        await _blRepo.AddAsync(bl);
+
+        // Déclenchement des sorties de stock
+        foreach (var ligne in bl.Lignes)
+        {
+            var movementDto = new CreateMouvementDto
+            {
+                ArticleId = ligne.ArticleId,
+                TypeMouvement = "SORTIE",
+                Quantite = ligne.QuantiteLivree,
+                DepotSourceId = depotId,
+                Remarks = $"Livraison {bl.NumeroBL} (BC: {bc.NumeroBC})"
+            };
+            
+            // Lève une exception si stock insuffisant, annulant toute la transaction
+            await _stockService.CreateMouvementAsync(movementDto, 1);
+        }
+
+        // Mettre à jour le BC
+        bc.Statut = "LIVRE";
+        
+        await _unitOfWork.SaveChangesAsync();
+
+        var saved = await _blRepo.GetByIdAsync(bl.Id);
+        return _mapper.Map<BonLivraisonReadDto>(saved);
     }
 
     public async Task<BonCommandeReadDto?> GetBonCommandeAsync(int id)

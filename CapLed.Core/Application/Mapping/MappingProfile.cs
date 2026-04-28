@@ -112,6 +112,7 @@ public class MappingProfile : Profile
         CreateMap<BonLivraison, BonLivraisonReadDto>()
             .ForMember(dest => dest.ClientNom, opt => opt.MapFrom(src => src.Client.Nom))
             .ForMember(dest => dest.NumeroBC, opt => opt.MapFrom(src => src.BonCommande != null ? src.BonCommande.NumeroBC : null))
+            .ForMember(dest => dest.DepotNom, opt => opt.MapFrom(src => src.Depot != null ? src.Depot.Nom : string.Empty))
             .ForMember(dest => dest.Lignes, opt => opt.MapFrom(src => src.Lignes));
 
         CreateMap<CreateBonLivraisonDto, BonLivraison>();

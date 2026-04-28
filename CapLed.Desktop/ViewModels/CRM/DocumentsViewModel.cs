@@ -24,6 +24,10 @@ public class DocumentsViewModel : BaseViewModel
     public ICommand DownloadBcPdfCommand { get; }
     public ICommand DownloadBlPdfCommand { get; }
     public ICommand DeleteBcCommand { get; }
+    public ICommand CreateBlCommand { get; }
+
+    // Multi-dépôt phase 1 : sélection manuelle simplifiée dans le ViewModel
+    private int _selectedDepotId = 1; // Default to Casablanca
 
     public DocumentsViewModel(DocumentApiClient documentApiClient, IConfirmationService confirmation)
     {
@@ -34,6 +38,41 @@ public class DocumentsViewModel : BaseViewModel
         DownloadBcPdfCommand = new AsyncRelayCommand(async param => await DownloadBcAsync((BonCommandeModel?)param));
         DownloadBlPdfCommand = new AsyncRelayCommand(async param => await DownloadBlAsync((BonLivraisonModel?)param));
         DeleteBcCommand = new AsyncRelayCommand(async param => await DeleteBcAsync((BonCommandeModel?)param));
+        CreateBlCommand = new AsyncRelayCommand(async param => await CreateBlAsync((BonCommandeModel?)param));
+    }
+
+    private async Task CreateBlAsync(BonCommandeModel? bc)
+    {
+        if (bc == null) return;
+        
+        if (bc.Statut != "EN_ATTENTE" && bc.Statut != "CREE")
+        {
+            _confirmation.ShowError("Action impossible", "Seuls les Bons de Commande en attente peuvent être livrés.");
+            return;
+        }
+
+        // Dans un monde idéal, on ouvrirait une petite popup. Pour faire simple en Phase 1 WPF :
+        // On demande confirmation à l'utilisateur, et on utilise le Dépôt 1 (Casa) ou on l'interroge.
+        // Simulons une demande simple (ex: Confirmer la création depuis Casablanca).
+        bool confirmCasa = _confirmation.Confirm("Dépôt d'expédition", 
+            $"Voulez-vous expédier la commande {bc.Numero} depuis le Dépôt de Casablanca ?\n\n(Cliquez sur Non pour expédier depuis Tanger)");
+        
+        _selectedDepotId = confirmCasa ? 1 : 2;
+
+        try
+        {
+            await _documentApiClient.CreateBonLivraisonFromBcAsync(bc.Id, _selectedDepotId);
+            _confirmation.ShowInfo("Succès", $"Le Bon de Livraison a été créé avec succès depuis le dépôt sélectionné.\nLe stock a été déduit.");
+            await LoadDataAsync();
+        }
+        catch (ApiException ex)
+        {
+            _confirmation.ShowError("Erreur Stock / Métier", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _confirmation.ShowError("Erreur", ex.Message);
+        }
     }
 
     private async Task DeleteBcAsync(BonCommandeModel? bc)

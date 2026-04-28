@@ -23,6 +23,10 @@ public class BonLivraison
     public string? Transporteur { get; set; }
     public string? NumeroSuivi { get; set; }
     
+    // Multi-dépôt : le dépôt physique d'expédition (Obligatoire)
+    public int DepotId { get; set; }
+    public virtual Stock.Depot Depot { get; set; } = null!;
+    
     public virtual ICollection<LigneBL> Lignes { get; set; } = new List<LigneBL>();
 }
 
