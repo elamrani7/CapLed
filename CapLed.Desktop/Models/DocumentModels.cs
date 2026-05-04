@@ -35,11 +35,23 @@ public class LigneBcModel
 public class BonLivraisonModel
 {
     public int Id { get; set; }
+    
+    [JsonPropertyName("numeroBL")]
     public string Numero { get; set; } = string.Empty;
+    
     public DateTime? DateLivraison { get; set; }
+    
+    [JsonPropertyName("statut")]
     public string StatutLivraison { get; set; } = string.Empty;
+    
     public string DepotNom { get; set; } = string.Empty;
-    public BonCommandeModel? BonCommande { get; set; }
+    
+    [JsonPropertyName("numeroBC")]
+    public string? NumeroBC { get; set; }
+    
+    [JsonIgnore]
+    public BonCommandeModel BonCommande => new BonCommandeModel { Numero = NumeroBC ?? string.Empty };
+    
     public List<LigneBlModel> Lignes { get; set; } = new();
 }
 

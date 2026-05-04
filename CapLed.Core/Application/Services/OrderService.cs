@@ -15,6 +15,9 @@ public class OrderService : IOrderService
     private readonly IStockServiceV3 _stockService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IEquipmentRepository _equipmentRepo;
+    private readonly ILotRepository _lotRepo;
+    private readonly INumeroSerieRepository _serieRepo;
 
     public OrderService(
         IBonCommandeRepository bcRepo,
@@ -22,7 +25,10 @@ public class OrderService : IOrderService
         ILeadRepository leadRepo,
         IStockServiceV3 stockService,
         IUnitOfWork unitOfWork,
-        IMapper mapper)
+        IMapper mapper,
+        IEquipmentRepository equipmentRepo,
+        ILotRepository lotRepo,
+        INumeroSerieRepository serieRepo)
     {
         _bcRepo = bcRepo;
         _blRepo = blRepo;
@@ -30,6 +36,9 @@ public class OrderService : IOrderService
         _stockService = stockService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _equipmentRepo = equipmentRepo;
+        _lotRepo = lotRepo;
+        _serieRepo = serieRepo;
     }
 
     public async Task<BonCommandeReadDto> CreateBonCommandeAsync(CreateBonCommandeDto dto)
@@ -177,6 +186,31 @@ public class OrderService : IOrderService
                 Remarks = $"Livraison {bl.NumeroBL} (BC: {bc.NumeroBC})"
             };
             
+            var article = await _equipmentRepo.GetByIdAsync(ligne.ArticleId);
+            if (article != null && article.Category?.TypeGestionStock == "LOT")
+            {
+                var lots = await _lotRepo.GetByArticleAsync(ligne.ArticleId);
+                var validLot = lots.FirstOrDefault(l => l.DepotId == depotId && l.Quantite >= ligne.QuantiteLivree);
+                if (validLot == null)
+                    throw new InvalidOperationException($"Stock insuffisant ou aucun lot contenant la quantité requise ({ligne.QuantiteLivree}) pour l'article '{article.Name}' dans ce dépôt.");
+                
+                movementDto.NumeroLot = validLot.NumeroLot;
+                ligne.LotId = validLot.Id;
+            }
+            else if (article != null && article.Category?.TypeGestionStock == "SERIALISE")
+            {
+                var series = await _serieRepo.GetByArticleAsync(ligne.ArticleId);
+                var availableSerials = series
+                    .Where(s => s.DepotId == depotId && s.Statut == StockManager.Core.Domain.Enums.SerialStatus.DISPONIBLE)
+                    .Take(ligne.QuantiteLivree)
+                    .ToList();
+                    
+                if (availableSerials.Count < ligne.QuantiteLivree)
+                    throw new InvalidOperationException($"Pas assez de numéros de série disponibles pour l'article '{article.Name}' dans ce dépôt.");
+                
+                movementDto.NumeroSeries = availableSerials.Select(s => s.NumeroSerieLabel).ToList();
+            }
+
             // Lève une exception si stock insuffisant, annulant toute la transaction
             await _stockService.CreateMouvementAsync(movementDto, 1);
         }
