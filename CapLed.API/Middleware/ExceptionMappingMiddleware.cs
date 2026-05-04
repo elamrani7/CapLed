@@ -81,7 +81,7 @@ public class ExceptionMappingMiddleware
                 // Erreur inattendue — log complet en interne, message générique vers le client
                 statusCode = (int)HttpStatusCode.InternalServerError;
                 code    = "INTERNAL_ERROR";
-                message = "Une erreur interne est survenue. Veuillez contacter l'administrateur.";
+                message = "Une erreur interne est survenue. Détail technique : " + exception.Message;
                 _logger.LogError(exception, "Unhandled exception on {Method} {Path}",
                     context.Request.Method, context.Request.Path);
                 break;
