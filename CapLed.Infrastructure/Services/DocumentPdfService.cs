@@ -66,7 +66,7 @@ public class DocumentPdfService : IDocumentPdfService
             container.Page(page =>
             {
                 page.Margin(40);
-                ComposeHeader(page, "BON DE LIVRAISON", dto.NumeroBL, dto.DateLivraison);
+                ComposeHeader(page, "BON DE LIVRAISON", dto.NumeroBL, dto.DateLivraison, dto.DepotId);
                 
                 page.Content().PaddingVertical(10).Column(col =>
                 {
@@ -126,7 +126,8 @@ public class DocumentPdfService : IDocumentPdfService
             container.Page(page =>
             {
                 page.Margin(40);
-                ComposeHeader(page, title, number, date);
+                // Defaulting to Depot 1 (Casablanca) for Devis and BC, as they are not tied to a fulfillment center yet
+                ComposeHeader(page, title, number, date, depotId: 1);
                 
                 page.Content().PaddingVertical(10).Column(col =>
                 {
@@ -186,15 +187,19 @@ public class DocumentPdfService : IDocumentPdfService
         }).GeneratePdf();
     }
 
-    private void ComposeHeader(PageDescriptor page, string title, string number, DateTime date)
+    private void ComposeHeader(PageDescriptor page, string title, string number, DateTime date, int? depotId = 1)
     {
+        string adresseExpediteur = depotId == 2 
+            ? "Route de Tétouan, Lot 10 ZAE Bni Ouassine, Tanger, Maroc"
+            : "31, Lot. Salama II, Florida, Casablanca, Maroc";
+
         page.Header().Row(row =>
         {
             row.RelativeItem().Column(col =>
             {
-                col.Item().Text("CAPLED ERP").FontSize(24).SemiBold().FontColor("#0056A6");
-                col.Item().Text("Solutions Industrielles & Stockage");
-                col.Item().Text("123 Rue de l'Innovation, 75000 Paris");
+                col.Item().Text("PART FINDER").FontSize(24).SemiBold().FontColor("#0056A6");
+                col.Item().Text("Solutions Industrielles & Électroniques");
+                col.Item().Text(adresseExpediteur);
             });
 
             row.RelativeItem().AlignRight().Column(col =>

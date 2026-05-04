@@ -40,6 +40,7 @@ public class BonLivraisonPdfDto
     public string? AdresseLivraison { get; set; }
     public List<DocumentLinePdfDto> Lines { get; set; } = new();
     public List<int> RelatedStockMovementIds { get; set; } = new();
+    public int DepotId { get; set; }
 }
 
 public class DocumentLinePdfDto

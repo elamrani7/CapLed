@@ -171,6 +171,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.ClientEmail, opt => opt.MapFrom(src => src.Client.Email))
             .ForMember(dest => dest.ClientTelephone, opt => opt.MapFrom(src => src.Client.Telephone))
             .ForMember(dest => dest.AdresseLivraison, opt => opt.MapFrom(src => src.AdresseLivraison))
+            .ForMember(dest => dest.DepotId, opt => opt.MapFrom(src => src.DepotId))
             .ForMember(dest => dest.Lines, opt => opt.MapFrom(src => src.Lignes));
 
         CreateMap<LigneBL, DocumentLinePdfDto>()
