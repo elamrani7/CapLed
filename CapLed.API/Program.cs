@@ -185,23 +185,13 @@ using (var scope = app.Services.CreateScope())
             await context.SaveChangesAsync();
         }
 
-        // Seed/Align Depots (Casablanca & Tanger)
-        var casa = await context.Depots.FindAsync(1);
-        if (casa == null)
-        {
-            context.Depots.Add(new Depot { Id = 1, Nom = "Casablanca", EstActif = true, CreatedAt = DateTime.UtcNow });
-        }
-        else if (casa.Nom != "Casablanca")
-        {
-            casa.Nom = "Casablanca";
-        }
-
-        var tanger = await context.Depots.FindAsync(2);
-        if (tanger == null)
-        {
-            context.Depots.Add(new Depot { Id = 2, Nom = "Tanger", EstActif = true, CreatedAt = DateTime.UtcNow });
-        }
-        await context.SaveChangesAsync();
+        // Seed/Align Depots (Casablanca & Tanger) using raw SQL to guarantee IDs 1 and 2
+        await context.Database.ExecuteSqlRawAsync(@"
+            INSERT IGNORE INTO Depots (Id, Nom, EstActif, CreatedAt) VALUES (1, 'Casablanca', 1, NOW());
+            INSERT IGNORE INTO Depots (Id, Nom, EstActif, CreatedAt) VALUES (2, 'Tanger', 1, NOW());
+            UPDATE Depots SET Id=1 WHERE Nom='Casablanca' AND Id != 1;
+            UPDATE Depots SET Id=2 WHERE Nom='Tanger' AND Id != 2;
+        ");
 
         // Data Sync: If articles have legacy Quantity but no StockQuantite, move them to Casablanca
         var articlesToSync = await context.Equipments
