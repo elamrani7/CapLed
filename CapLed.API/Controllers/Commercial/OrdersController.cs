@@ -111,4 +111,17 @@ public class OrdersController : ControllerBase
         if (bl == null) return NotFound();
         return Ok(bl);
     }
+
+    [HttpGet("bl")]
+    public async Task<ActionResult> GetAllBonsLivraison()
+    {
+        var bls = await _orderService.GetAllBonsLivraisonAsync();
+        return Ok(new
+        {
+            Items = bls,
+            TotalCount = bls.Count,
+            Page = 1,
+            PageSize = bls.Count
+        });
+    }
 }

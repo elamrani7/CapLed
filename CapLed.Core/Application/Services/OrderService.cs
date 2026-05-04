@@ -252,6 +252,12 @@ public class OrderService : IOrderService
         }).ToList();
     }
 
+    public async Task<List<BonLivraisonReadDto>> GetAllBonsLivraisonAsync()
+    {
+        var bls = await _blRepo.GetAllAsync();
+        return bls.Select(bl => _mapper.Map<BonLivraisonReadDto>(bl)).ToList();
+    }
+
     public async Task DeleteBonCommandeAsync(int id)
     {
         var bc = await _bcRepo.GetByIdAsync(id);
