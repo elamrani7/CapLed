@@ -1,5 +1,12 @@
 namespace CapLed.Desktop.Models;
 
+public class DepotModel
+{
+    public int Id { get; set; }
+    public string Nom { get; set; } = string.Empty;
+}
+
+
 /// <summary>
 /// Mirrors StockMovementReadDto — used for movement history list.
 /// </summary>
@@ -13,6 +20,7 @@ public class StockMovementModel
     public DateTime Date { get; set; }
     public string? Comment { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string DepotNom { get; set; } = string.Empty;
 
     // ── Traçabilité (Step 3) ──
     public string? NumeroLot { get; set; }

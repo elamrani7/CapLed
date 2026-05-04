@@ -37,6 +37,7 @@ public class StockMovementViewModel : BaseViewModel
     // ─── Collections ─────────────────────────────────────────────────────────
     public ObservableCollection<StockMovementModel> Movements { get; } = new();
     public ObservableCollection<EquipmentListItemModel> EquipmentChoices { get; } = new();
+    public ObservableCollection<DepotModel> Depots { get; } = new();
 
     // ─── Filters ─────────────────────────────────────────────────────────────
     private EquipmentListItemModel? _selectedFilterEquipment;
@@ -171,6 +172,13 @@ public class StockMovementViewModel : BaseViewModel
         set => SetProperty(ref _movementComment, value);
     }
 
+    private DepotModel? _selectedDepot;
+    public DepotModel? SelectedDepot
+    {
+        get => _selectedDepot;
+        set => SetProperty(ref _selectedDepot, value);
+    }
+
     private int _page = 1;
     public int Page
     {
@@ -230,8 +238,17 @@ public class StockMovementViewModel : BaseViewModel
 
     public async Task InitializeAsync()
     {
+        InitializeDepots();
         await LoadEquipmentChoicesAsync();
         await LoadHistoryAsync();
+    }
+
+    private void InitializeDepots()
+    {
+        Depots.Clear();
+        Depots.Add(new DepotModel { Id = 1, Nom = "Casablanca" });
+        Depots.Add(new DepotModel { Id = 2, Nom = "Tanger" });
+        SelectedDepot = Depots.FirstOrDefault();
     }
 
     private async Task LoadEquipmentChoicesAsync()
@@ -335,6 +352,12 @@ public class StockMovementViewModel : BaseViewModel
             return;
         }
 
+        if (SelectedDepot == null)
+        {
+            ErrorMessage = "Veuillez sélectionner un dépôt.";
+            return;
+        }
+
         if (MovementQuantity <= 0)
         {
             ErrorMessage = "La quantité doit être supérieure à 0.";
@@ -373,7 +396,9 @@ public class StockMovementViewModel : BaseViewModel
                 DateEntreeLot = MovementDate,
                 Remarks = MovementComment,
                 NumeroLot = IsLotMode ? NumeroLot : null,
-                NumeroSeries = IsSerialMode ? NumeroSeries.Select(s => s.Value).ToList() : null
+                NumeroSeries = IsSerialMode ? NumeroSeries.Select(s => s.Value).ToList() : null,
+                DepotSourceId = NewMovementType == "EXIT" ? SelectedDepot?.Id : null,
+                DepotDestinationId = NewMovementType == "ENTRY" ? SelectedDepot?.Id : null
             };
 
             if (IsEditMode && SelectedMovement != null)
@@ -407,9 +432,9 @@ public class StockMovementViewModel : BaseViewModel
         {
             ErrorMessage = ex.Message; // Business message from the API (e.g. STOCK_INSUFFICIENT)
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            ErrorMessage = "L'enregistrement du mouvement a échoué. Vérifiez les informations saisies.";  
+            ErrorMessage = $"Une erreur interne est survenue. Veuillez contacter l'administrateur. ({ex.Message})";  
         }
         finally
         {

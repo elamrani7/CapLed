@@ -89,6 +89,9 @@ public class StockServiceV2 : IStockServiceV2
             // RG-02: Save movement record
             await _movementRepository.AddAsync(movement);
 
+            // Flush pending StockQuantite/AlerteStock changes before reading aggregate
+            await _uow.SaveChangesAsync();
+
             // Sync legacy Quantity for backward compatibility with v1
             // Get total stock across ALL depots using repository method
             article.Quantity = await _stockQuantiteRepository.GetTotalStockAsync(dto.ArticleId);

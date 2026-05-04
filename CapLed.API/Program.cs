@@ -185,20 +185,58 @@ using (var scope = app.Services.CreateScope())
             await context.SaveChangesAsync();
         }
 
-        // Seed Depots (Casa & Tanger)
-        if (!await context.Depots.AnyAsync())
+        // Seed/Align Depots (Casablanca & Tanger)
+        var casa = await context.Depots.FindAsync(1);
+        if (casa == null)
         {
-            context.Depots.AddRange(
-                new Depot { Id = 1, Nom = "Casablanca", EstActif = true, CreatedAt = DateTime.UtcNow },
-                new Depot { Id = 2, Nom = "Tanger",     EstActif = true, CreatedAt = DateTime.UtcNow }
-            );
+            context.Depots.Add(new Depot { Id = 1, Nom = "Casablanca", EstActif = true, CreatedAt = DateTime.UtcNow });
+        }
+        else if (casa.Nom != "Casablanca")
+        {
+            casa.Nom = "Casablanca";
+        }
+
+        var tanger = await context.Depots.FindAsync(2);
+        if (tanger == null)
+        {
+            context.Depots.Add(new Depot { Id = 2, Nom = "Tanger", EstActif = true, CreatedAt = DateTime.UtcNow });
+        }
+        await context.SaveChangesAsync();
+
+        // Data Sync: If articles have legacy Quantity but no StockQuantite, move them to Casablanca
+        var articlesToSync = await context.Equipments
+            .Where(e => !context.StockQuantites.Any(sq => sq.ArticleId == e.Id))
+            .ToListAsync();
+
+        if (articlesToSync.Any())
+        {
+            foreach (var art in articlesToSync)
+            {
+                context.StockQuantites.Add(new StockQuantite
+                {
+                    ArticleId = art.Id,
+                    DepotId = 1, // Casa gets the legacy stock
+                    Quantite = art.Quantity,
+                    SeuilMinimum = art.MinThreshold,
+                    LastUpdatedAt = DateTime.UtcNow
+                });
+
+                context.StockQuantites.Add(new StockQuantite
+                {
+                    ArticleId = art.Id,
+                    DepotId = 2, // Tanger initialized at 0
+                    Quantite = 0,
+                    SeuilMinimum = art.MinThreshold,
+                    LastUpdatedAt = DateTime.UtcNow
+                });
+            }
             await context.SaveChangesAsync();
         }
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred during DB migration/seeding.");
+        logger.LogError(ex, "An error occurred during DB migration/seeding. Cause: {Message}", ex.Message);
     }
 }
 

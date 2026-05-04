@@ -29,12 +29,12 @@ public class StockQuantiteRepository : IStockQuantiteRepository
     public async Task AddAsync(StockQuantite stockQuantite)
     {
         await _context.StockQuantites.AddAsync(stockQuantite);
-        await _context.SaveChangesAsync();
+        // SaveChanges is handled by UnitOfWork transaction
     }
 
     public async Task UpdateAsync(StockQuantite stockQuantite)
     {
         _context.StockQuantites.Update(stockQuantite);
-        await _context.SaveChangesAsync();
+        // SaveChanges is handled by UnitOfWork transaction
     }
 }

@@ -187,6 +187,9 @@ public class StockServiceV3 : IStockServiceV3
             movement.TraceabiliteInfo = $"LOT: {dto.NumeroLot}";
             await _movementRepo.AddAsync(movement);
 
+            // Flush pending changes before reading aggregate
+            await _uow.SaveChangesAsync();
+
             // Sync legacy Quantity
             article.Quantity = await _stockQuantiteRepo.GetTotalStockAsync(dto.ArticleId);
             await _equipmentRepo.UpdateAsync(article);
@@ -311,6 +314,9 @@ public class StockServiceV3 : IStockServiceV3
             movement.TraceabiliteInfo = $"SN: {string.Join(", ", dto.NumeroSeries)}";
             await _movementRepo.AddAsync(movement);
 
+            // Flush pending changes before reading aggregate
+            await _uow.SaveChangesAsync();
+
             // Sync legacy Quantity
             article.Quantity = await _stockQuantiteRepo.GetTotalStockAsync(dto.ArticleId);
             await _equipmentRepo.UpdateAsync(article);
@@ -365,18 +371,14 @@ public class StockServiceV3 : IStockServiceV3
 
         if (sq == null)
         {
-            // Migration logic: if no multi-depot record exists, use legacy quantity as base
-            // to avoid overwriting existing stock with just the delta
-            int baseQuantity = legacyQuantity;
-
-            if (baseQuantity + delta < 0)
-                throw new Exception($"Stock insuffisant. Global: {baseQuantity}, Requis: {-delta}.");
+            if (delta < 0)
+                throw new Exception($"Stock insuffisant dans le dépôt {depotId} (dépôt vide).");
 
             sq = new StockQuantite
             {
                 ArticleId     = articleId,
                 DepotId       = depotId,
-                Quantite      = baseQuantity + delta,
+                Quantite      = delta,
                 LastUpdatedAt = DateTime.UtcNow
             };
             await _stockQuantiteRepo.AddAsync(sq);

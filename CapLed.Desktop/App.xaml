@@ -1,4 +1,4 @@
-﻿<Application x:Class="CapLed.Desktop.App"
+<Application x:Class="CapLed.Desktop.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:CapLed.Desktop.Converters"
@@ -15,6 +15,7 @@
             <conv:ConditionToBrushConverter x:Key="ConditionToBrush"/>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
             <conv:InverseNullToBoolConverter x:Key="InverseNullToBool"/>
+            <conv:InverseNullToBoolConverter x:Key="NullToBool"/>
             <conv:StockAlertToBrushConverter x:Key="StockAlertToBrush"/>
             <conv:StockAlertToIconConverter x:Key="StockAlertToIcon"/>
             <conv:StockAlertToTextConverter x:Key="StockAlertToText"/>

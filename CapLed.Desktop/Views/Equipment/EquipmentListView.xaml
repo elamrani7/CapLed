@@ -199,11 +199,67 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="QTÉ" Binding="{Binding Quantity}" Width="80">
+                    <!-- ═══ STOCK PAR DÉPÔT ═══ -->
+                    <DataGridTemplateColumn Width="80">
+                        <DataGridTemplateColumn.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="6" Height="6" Fill="#3B82F6" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="CASA" FontWeight="Bold" Foreground="#3B82F6" FontSize="11"/>
+                            </StackPanel>
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding QuantityCasa}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#1E293B"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding QuantityCasa}" Value="0">
+                                                    <Setter Property="Foreground" Value="#EF4444"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Width="80">
+                        <DataGridTemplateColumn.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="6" Height="6" Fill="#F97316" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="TANGER" FontWeight="Bold" Foreground="#F97316" FontSize="11"/>
+                            </StackPanel>
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding QuantityTanger}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#1E293B"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding QuantityTanger}" Value="0">
+                                                    <Setter Property="Foreground" Value="#EF4444"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTextColumn Header="TOTAL" Binding="{Binding Quantity}" Width="65">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="HorizontalAlignment" Value="Center"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="FontWeight" Value="Normal"/>
+                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                <Setter Property="FontStyle" Value="Italic"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>

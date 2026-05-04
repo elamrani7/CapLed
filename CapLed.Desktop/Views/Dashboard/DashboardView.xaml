@@ -1,18 +1,304 @@
 <UserControl x:Class="CapLed.Desktop.Views.Dashboard.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CapLed.Desktop.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:DashboardViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
              Background="#F0F2F5">
-    <Grid Margin="28">
-        <StackPanel>
-            <TextBlock Text="Tableau de bord"
-                       FontSize="24" FontWeight="Bold"
-                       Foreground="#1A2436"
-                       FontFamily="Segoe UI"
-                       Margin="0,0,0,8"/>
-            <TextBlock Text="Vue d'ensemble du stock — À implémenter"
-                       Foreground="#78909C"
-                       FontSize="14"
-                       FontFamily="Segoe UI"/>
-        </StackPanel>
-    </Grid>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
+        <Grid Margin="28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>  <!-- Header -->
+                <RowDefinition Height="Auto"/>  <!-- KPI Cards Row -->
+                <RowDefinition Height="Auto"/>  <!-- Depot Detail Cards -->
+                <RowDefinition Height="Auto"/>  <!-- Alerte locale -->
+            </Grid.RowDefinitions>
+
+            <!-- ═══ HEADER ═══ -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,24">
+                <DockPanel>
+                    <StackPanel>
+                        <TextBlock Text="Tableau de bord" FontSize="26" FontWeight="Bold" Foreground="#1A2436"/>
+                        <TextBlock Text="Vue d'ensemble du stock multi-dépôt" Foreground="#64748B" FontSize="13" Margin="0,2,0,0"/>
+                    </StackPanel>
+                    <Button DockPanel.Dock="Right" Content="⟳  Actualiser" HorizontalAlignment="Right"
+                            Command="{Binding RefreshCommand}"
+                            Background="#334155" Foreground="White" FontWeight="SemiBold"
+                            Padding="16,8" Cursor="Hand" BorderThickness="0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </DockPanel>
+
+                <!-- Loading -->
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                    <ProgressBar IsIndeterminate="True" Width="100" Height="4"/>
+                    <TextBlock Text="Chargement des indicateurs..." Margin="10,0,0,0" Foreground="#64748B"/>
+                </StackPanel>
+
+                <!-- Error -->
+                <Border Style="{StaticResource ErrorMessageStyle}" Margin="0,10,0,0"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
+                    <TextBlock Text="{Binding ErrorMessage}"/>
+                </Border>
+            </StackPanel>
+
+            <!-- ═══ ROW 1: KPI CARDS ═══ -->
+            <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,20">
+
+                <!-- Card: Total Articles -->
+                <Border Background="White" CornerRadius="10" Padding="20,18" Margin="0,0,12,0">
+                    <Border.Effect><DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06"/></Border.Effect>
+                    <StackPanel>
+                        <TextBlock Text="📦  ARTICLES" FontSize="11" FontWeight="Bold" Foreground="#94A3B8" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding TotalArticles}" FontSize="32" FontWeight="Bold" Foreground="#1E293B"/>
+                        <TextBlock FontSize="12" Foreground="#64748B" Margin="0,4,0,0">
+                            <Run Text="{Binding StockGlobal, Mode=OneWay}"/>
+                            <Run Text="pièces en stock"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card: Stock Casablanca -->
+                <Border Background="White" CornerRadius="10" Padding="20,18" Margin="0,0,12,0">
+                    <Border.Effect><DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06"/></Border.Effect>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Ellipse Width="8" Height="8" Fill="#3B82F6" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="CASABLANCA" FontSize="11" FontWeight="Bold" Foreground="#3B82F6"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding StockCasa}" FontSize="32" FontWeight="Bold" Foreground="#1E293B"/>
+                        <TextBlock FontSize="12" Foreground="#64748B" Margin="0,4,0,0">
+                            <Run Text="{Binding RuptureCasa, Mode=OneWay}"/>
+                            <Run Text="article(s) à 0"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card: Stock Tanger -->
+                <Border Background="White" CornerRadius="10" Padding="20,18" Margin="0,0,12,0">
+                    <Border.Effect><DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06"/></Border.Effect>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Ellipse Width="8" Height="8" Fill="#F97316" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="TANGER" FontSize="11" FontWeight="Bold" Foreground="#F97316"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding StockTanger}" FontSize="32" FontWeight="Bold" Foreground="#1E293B"/>
+                        <TextBlock FontSize="12" Foreground="#64748B" Margin="0,4,0,0">
+                            <Run Text="{Binding RuptureTanger, Mode=OneWay}"/>
+                            <Run Text="article(s) à 0"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card: Alertes -->
+                <Border CornerRadius="10" Padding="20,18" Margin="0,0,0,0">
+                    <Border.Effect><DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06"/></Border.Effect>
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="White"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ArticlesCritiques}" Value="0">
+                                    <Setter Property="Background" Value="White"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock Text="⚠️  ALERTES" FontSize="11" FontWeight="Bold" Foreground="#94A3B8" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="32" FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#15803D"/>
+                                    <Setter Property="Text" Value="{Binding ArticlesCritiques}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ArticlesCritiques}" Value="0">
+                                            <Setter Property="Text" Value="0"/>
+                                            <Setter Property="Foreground" Value="#15803D"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock FontSize="12" Margin="0,4,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#64748B"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ArticlesCritiques}" Value="0">
+                                            <Setter Property="Foreground" Value="#15803D"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                            <Run Text="{Binding ArticlesRupture, Mode=OneWay}"/>
+                            <Run Text="en rupture totale"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- ═══ ROW 2: DEPOT DETAIL CARDS ═══ -->
+            <UniformGrid Grid.Row="2" Columns="2" Margin="0,0,0,20">
+
+                <!-- Casablanca Detail -->
+                <Border CornerRadius="10" Padding="24,20" Margin="0,0,10,0"
+                        BorderThickness="1,4,1,1" BorderBrush="#3B82F6" Background="White">
+                    <Border.Effect><DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06"/></Border.Effect>
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,14">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="10" Height="10" Fill="#3B82F6" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Dépôt Casablanca" FontSize="16" FontWeight="Bold" Foreground="#1E293B"/>
+                            </StackPanel>
+                            <!-- Status badge -->
+                            <Border DockPanel.Dock="Right" HorizontalAlignment="Right" CornerRadius="10" Padding="10,3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#DCFCE7"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CasaStatus}" Value="ALERTE">
+                                                <Setter Property="Background" Value="#FEF3C7"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock FontSize="11" FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="✓ Nominal"/>
+                                            <Setter Property="Foreground" Value="#15803D"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CasaStatus}" Value="ALERTE">
+                                                    <Setter Property="Text" Value="⚠ Ruptures"/>
+                                                    <Setter Property="Foreground" Value="#92400E"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </DockPanel>
+
+                        <Border Background="#F8FAFC" CornerRadius="8" Padding="14,10" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Stock total" FontSize="11" Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding StockCasa}" FontSize="22" FontWeight="Bold" Foreground="#1E293B"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Ruptures locales" FontSize="11" Foreground="#94A3B8"/>
+                                    <TextBlock FontSize="22" FontWeight="Bold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding RuptureCasa}"/>
+                                                <Setter Property="Foreground" Value="#15803D"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RuptureCasa}" Value="0">
+                                                        <Setter Property="Text" Value="0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tanger Detail -->
+                <Border CornerRadius="10" Padding="24,20" Margin="10,0,0,0"
+                        BorderThickness="1,4,1,1" BorderBrush="#F97316" Background="White">
+                    <Border.Effect><DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06"/></Border.Effect>
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,14">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="10" Height="10" Fill="#F97316" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Dépôt Tanger" FontSize="16" FontWeight="Bold" Foreground="#1E293B"/>
+                            </StackPanel>
+                            <!-- Status badge -->
+                            <Border DockPanel.Dock="Right" HorizontalAlignment="Right" CornerRadius="10" Padding="10,3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#DCFCE7"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TangerStatus}" Value="ALERTE">
+                                                <Setter Property="Background" Value="#FEF3C7"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock FontSize="11" FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="✓ Nominal"/>
+                                            <Setter Property="Foreground" Value="#15803D"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TangerStatus}" Value="ALERTE">
+                                                    <Setter Property="Text" Value="⚠ Ruptures"/>
+                                                    <Setter Property="Foreground" Value="#92400E"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </DockPanel>
+
+                        <Border Background="#F8FAFC" CornerRadius="8" Padding="14,10" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Stock total" FontSize="11" Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding StockTanger}" FontSize="22" FontWeight="Bold" Foreground="#1E293B"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Ruptures locales" FontSize="11" Foreground="#94A3B8"/>
+                                    <TextBlock FontSize="22" FontWeight="Bold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding RuptureTanger}"/>
+                                                <Setter Property="Foreground" Value="#15803D"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RuptureTanger}" Value="0">
+                                                        <Setter Property="Text" Value="0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- ═══ ROW 3: ALERTE LOCALE (Transfert possible) ═══ -->
+            <Border Grid.Row="3" CornerRadius="10" Padding="18,14" Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                    Visibility="{Binding HasAlerteLocale, Converter={StaticResource BoolToVis}}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="💡" FontSize="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding AlerteLocalMessage}" Foreground="#92400E" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

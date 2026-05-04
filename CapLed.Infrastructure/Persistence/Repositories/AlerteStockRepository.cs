@@ -22,12 +22,12 @@ public class AlerteStockRepository : IAlerteStockRepository
     public async Task AddAsync(AlerteStock alerte)
     {
         await _context.AlertesStock.AddAsync(alerte);
-        await _context.SaveChangesAsync();
+        // SaveChanges is handled by UnitOfWork transaction
     }
 
     public async Task UpdateAsync(AlerteStock alerte)
     {
         _context.AlertesStock.Update(alerte);
-        await _context.SaveChangesAsync();
+        // SaveChanges is handled by UnitOfWork transaction
     }
 }

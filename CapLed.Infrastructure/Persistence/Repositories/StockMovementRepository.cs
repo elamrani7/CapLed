@@ -17,7 +17,7 @@ public class StockMovementRepository : IStockMovementRepository
     public async Task<StockMovement> AddAsync(StockMovement movement)
     {
         await _context.StockMovements.AddAsync(movement);
-        await _context.SaveChangesAsync();
+        // SaveChanges is handled by UnitOfWork transaction
         return movement;
     }
 
@@ -26,6 +26,8 @@ public class StockMovementRepository : IStockMovementRepository
         return await _context.StockMovements
             .Include(m => m.Equipment)
             .Include(m => m.User)
+            .Include(m => m.DepotSource)
+            .Include(m => m.DepotDestination)
             .Where(m => m.EquipmentId == equipmentId)
             .OrderByDescending(m => m.CreatedAt)
             .ToListAsync();
@@ -42,6 +44,8 @@ public class StockMovementRepository : IStockMovementRepository
         var query = _context.StockMovements
             .Include(m => m.Equipment)
             .Include(m => m.User)
+            .Include(m => m.DepotSource)
+            .Include(m => m.DepotDestination)
             .AsQueryable();
 
         if (equipmentId.HasValue)
@@ -72,6 +76,8 @@ public class StockMovementRepository : IStockMovementRepository
         return await _context.StockMovements
             .Include(m => m.Equipment)
             .Include(m => m.User)
+            .Include(m => m.DepotSource)
+            .Include(m => m.DepotDestination)
             .FirstOrDefaultAsync(m => m.Id == id);
     }
 

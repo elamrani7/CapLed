@@ -43,6 +43,7 @@ public class StockController : ControllerBase
             request.EquipmentId, 
             request.Quantity, 
             userId, 
+            depotId: request.DepotId,
             remarks: request.Comment);
 
         // Re-fetch to include relations for the DTO
@@ -62,6 +63,7 @@ public class StockController : ControllerBase
             request.EquipmentId,
             request.Quantity,
             userId,
+            depotId: request.DepotId,
             remarks: request.Comment);
 
         var created = await _movementRepository.GetByIdAsync(movement.Id);

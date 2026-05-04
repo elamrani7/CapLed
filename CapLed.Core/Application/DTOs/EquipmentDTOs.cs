@@ -14,6 +14,8 @@ public class EquipmentListItemDto
     public string CategoryName { get; set; } = string.Empty;
     public EquipmentCondition Condition { get; set; }
     public int Quantity { get; set; }
+    public int QuantityCasa { get; set; }
+    public int QuantityTanger { get; set; }
     public StockAlertLevel AlertLevel { get; set; }
     // Champs enrichis pour la vue inventaire
     public string TypeGestionStock { get; set; } = string.Empty;

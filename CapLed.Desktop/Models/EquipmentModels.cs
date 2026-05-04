@@ -13,6 +13,8 @@ public class EquipmentListItemModel
     public string CategoryName { get; set; } = string.Empty;
     public string Condition { get; set; } = string.Empty;
     public int Quantity { get; set; }
+    public int QuantityCasa { get; set; }
+    public int QuantityTanger { get; set; }
     public StockAlertLevel AlertLevel { get; set; }
     // Champs ajoutés pour enrichir l'inventaire
     public string TypeGestionStock { get; set; } = string.Empty; // QUANTITE / LOT / SERIALISE

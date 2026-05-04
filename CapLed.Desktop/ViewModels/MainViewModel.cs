@@ -146,13 +146,14 @@ public class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(UserFullName));
         OnPropertyChanged(nameof(UserRoleDisplay));
 
-        if (viewModel is EquipmentListViewModel eqVm) await eqVm.InitializeAsync();
+        if (viewModel is DashboardViewModel dvm) await dvm.InitializeAsync();
+        else if (viewModel is EquipmentListViewModel eqVm) await eqVm.InitializeAsync();
         else if (viewModel is StockMovementViewModel svm) await svm.InitializeAsync();
         else if (viewModel is CategoryViewModel cvm) await cvm.LoadDataAsync();
         else if (viewModel is AlertsViewModel avm) await avm.InitializeAsync();
         else if (viewModel is UserViewModel uvm) await uvm.InitializeAsync();
         else if (viewModel is CapLed.Desktop.ViewModels.CRM.LeadsViewModel lvm) await lvm.LoadLeadsAsync();
-        else if (viewModel is CapLed.Desktop.ViewModels.CRM.DocumentsViewModel dvm) await dvm.LoadDataAsync();
+        else if (viewModel is CapLed.Desktop.ViewModels.CRM.DocumentsViewModel docsVm) await docsVm.LoadDataAsync();
     }
 
     public async Task NavigateToEquipmentDetail(int? id = null)

@@ -9,15 +9,19 @@ namespace StockManager.Core.Application.Services;
 public class StockService : IStockService
 {
     private readonly IEquipmentRepository _equipmentRepository;
+    private readonly IStockQuantiteRepository _stockQuantiteRepository;
     private readonly IStockMovementRepository _movementRepository;
 
-    public StockService(IEquipmentRepository equipmentRepository, IStockMovementRepository movementRepository)
+    public StockService(IEquipmentRepository equipmentRepository, 
+                        IStockMovementRepository movementRepository,
+                        IStockQuantiteRepository stockQuantiteRepository)
     {
         _equipmentRepository = equipmentRepository;
         _movementRepository = movementRepository;
+        _stockQuantiteRepository = stockQuantiteRepository;
     }
 
-    public async Task<StockMovement> RecordEntryAsync(int equipmentId, int quantity, int userId, string? remarks = null)
+    public async Task<StockMovement> RecordEntryAsync(int equipmentId, int quantity, int userId, int depotId, string? remarks = null)
     {
         var equipment = await _equipmentRepository.GetByIdAsync(equipmentId);
         if (equipment == null)
@@ -29,30 +33,53 @@ public class StockService : IStockService
             EquipmentId = equipmentId,
             UserId = userId,
             Type = MovementType.ENTRY,
+            TypeMouvement = "ENTREE",
             Quantity = quantity,
+            DepotDestinationId = depotId,
             Remarks = remarks,
             CreatedAt = DateTime.UtcNow
         };
 
-        // 2. Update equipment quantity
+        // 2. Update equipment quantity (global)
         equipment.Quantity += quantity;
 
-        // 3. Save changes (Repositories handle SaveChanges internaly in this simple design)
+        // 3. Update stock per depot
+        var sq = await _stockQuantiteRepository.GetByArticleAndDepotAsync(equipmentId, depotId);
+        if (sq == null)
+        {
+            await _stockQuantiteRepository.AddAsync(new StockManager.Core.Domain.Entities.Stock.StockQuantite
+            {
+                ArticleId = equipmentId,
+                DepotId = depotId,
+                Quantite = quantity,
+                LastUpdatedAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            sq.Quantite += quantity;
+            sq.LastUpdatedAt = DateTime.UtcNow;
+            await _stockQuantiteRepository.UpdateAsync(sq);
+        }
+
+        // 4. Save changes
         await _movementRepository.AddAsync(movement);
         await _equipmentRepository.UpdateAsync(equipment);
 
         return movement;
     }
 
-    public async Task<StockMovement> RecordExitAsync(int equipmentId, int quantity, int userId, string? remarks = null)
+    public async Task<StockMovement> RecordExitAsync(int equipmentId, int quantity, int userId, int depotId, string? remarks = null)
     {
         var equipment = await _equipmentRepository.GetByIdAsync(equipmentId);
         if (equipment == null)
             throw new NotFoundException("ARTICLE_NOT_FOUND", $"L'article avec l'identifiant {equipmentId} est introuvable.");
 
-        if (equipment.Quantity < quantity)
+        // Check stock per depot
+        var sq = await _stockQuantiteRepository.GetByArticleAndDepotAsync(equipmentId, depotId);
+        if (sq == null || sq.Quantite < quantity)
             throw new DomainException("STOCK_INSUFFICIENT",
-                $"Stock insuffisant pour '{equipment.Name}'. Disponible : {equipment.Quantity}, demandé : {quantity}.");
+                $"Stock insuffisant dans le dépôt sélectionné. Disponible : {sq?.Quantite ?? 0}, demandé : {quantity}.");
 
         // 1. Create the movement record
         var movement = new StockMovement
@@ -60,15 +87,22 @@ public class StockService : IStockService
             EquipmentId = equipmentId,
             UserId = userId,
             Type = MovementType.EXIT,
+            TypeMouvement = "SORTIE",
             Quantity = quantity,
+            DepotSourceId = depotId,
             Remarks = remarks,
             CreatedAt = DateTime.UtcNow
         };
 
-        // 2. Update equipment quantity
+        // 2. Update equipment quantity (global)
         equipment.Quantity -= quantity;
 
-        // 3. Save changes
+        // 3. Update stock per depot
+        sq.Quantite -= quantity;
+        sq.LastUpdatedAt = DateTime.UtcNow;
+        await _stockQuantiteRepository.UpdateAsync(sq);
+
+        // 4. Save changes
         await _movementRepository.AddAsync(movement);
         await _equipmentRepository.UpdateAsync(equipment);
 
