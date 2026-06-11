@@ -1,91 +1,99 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BadgeDisponibilite, BadgeCondition } from '../shared/Badge';
+import { resolveAssetUrl } from '../../api/assets';
+
+export const ProductCardSkeleton = () => (
+  <div className="pf-product-card pf-product-card-skeleton" aria-hidden="true">
+    <div className="pf-skeleton-media"></div>
+    <div className="pf-skeleton-body">
+      <span className="pf-skeleton-line short"></span>
+      <span className="pf-skeleton-line title"></span>
+      <span className="pf-skeleton-line"></span>
+      <span className="pf-skeleton-line"></span>
+      <span className="pf-skeleton-button"></span>
+    </div>
+  </div>
+);
+
+const ProductFallbackVisual = ({ product }: { product: any }) => (
+  <div className="pf-product-fallback">
+    <div className="pf-product-fallback-mark">
+      <i className="bi bi-cpu"></i>
+    </div>
+    <div className="pf-product-fallback-brand">PartFinder</div>
+    <div className="pf-product-fallback-ref">{product.reference || 'Produit industriel'}</div>
+  </div>
+);
 
 export const ProductCard = ({ product }: { product: any }) => {
-  const hasImage = !!product.urlImagePrincipale;
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUrl = resolveAssetUrl(product.urlImagePrincipale);
+  const hasImage = !!imageUrl && !imageFailed;
   const hasDispoInfo = product.disponibiliteBadge &&
     product.disponibiliteBadge.toUpperCase() !== 'NON_SPECIFIE' &&
+    product.disponibiliteBadge.toUpperCase() !== 'NON SPECIFIE' &&
     product.disponibiliteBadge.toUpperCase() !== 'NON SPÉCIFIÉ';
   const hasCondition = product.condition &&
     product.condition.toUpperCase() !== 'NON_SPECIFIE';
 
   return (
-    <div className="pf-product-card">
-      {/* Image */}
+    <article className="pf-product-card">
       <div className="pf-product-image-wrap">
         {hasImage ? (
           <img
-            src={`https://capled-api.onrender.com${product.urlImagePrincipale}`}
+            src={imageUrl}
             alt={product.nom}
+            onError={() => setImageFailed(true)}
             style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '12px' }}
           />
         ) : (
-          <div className="d-flex flex-column align-items-center" style={{ color: 'var(--pf-gray-400)' }}>
-            <i className="bi bi-image" style={{ fontSize: '2rem', opacity: 0.25 }}></i>
-            <span style={{ fontSize: '0.7rem', marginTop: '4px', opacity: 0.5 }}>Aucune image</span>
-          </div>
+          <ProductFallbackVisual product={product} />
         )}
 
-        {/* Badges — only show if meaningful */}
         {hasDispoInfo && (
-          <div style={{ position: 'absolute', top: 8, left: 8 }}>
+          <div className="pf-product-badge pf-product-badge-left">
             <BadgeDisponibilite dispo={product.disponibiliteBadge} />
           </div>
         )}
         {hasCondition && (
-          <div style={{ position: 'absolute', top: 8, right: 8 }}>
+          <div className="pf-product-badge pf-product-badge-right">
             <BadgeCondition condition={product.condition} grade={product.gradeVisuel} />
           </div>
         )}
       </div>
 
-      {/* Body */}
-      <div className="d-flex flex-column p-3 flex-grow-1" style={{ gap: '6px' }}>
-        {/* Reference */}
-        <div className="pf-product-ref">Réf: {product.reference || '—'}</div>
-
-        {/* Title */}
+      <div className="pf-product-body">
+        <div className="pf-product-ref">Ref: {product.reference || '-'}</div>
         <h3 className="pf-product-title mb-0">{product.nom}</h3>
 
-        {/* Brand */}
         {product.marque && (
           <div>
             <span className="pf-badge-marque">{product.marque}</span>
           </div>
         )}
 
-        {/* Key specs */}
         {product.caracteristiquesPrincipales?.length > 0 && (
-          <ul className="list-unstyled mb-0 flex-grow-1" style={{ marginTop: '4px' }}>
+          <ul className="pf-product-specs">
             {product.caracteristiquesPrincipales.slice(0, 2).map((feat: any, idx: number) => (
-              <li key={idx}
-                className="d-flex justify-content-between"
-                style={{
-                  fontSize: '0.72rem', color: 'var(--pf-gray-600)',
-                  borderBottom: '1px solid var(--pf-border)',
-                  paddingBottom: '3px', marginBottom: '3px'
-                }}>
+              <li key={idx}>
                 <span>{feat.nom}</span>
-                <span style={{ fontWeight: 600, color: 'var(--pf-gray-800)' }}>{feat.valeur}</span>
+                <strong>{feat.valeur}</strong>
               </li>
             ))}
           </ul>
         )}
 
-        {/* Spacer */}
-        <div className="flex-grow-1" style={{ minHeight: '8px' }}></div>
-
-        {/* Price indicator + CTA */}
-        <div style={{ marginTop: '8px' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--pf-gray-400)', marginBottom: '8px', fontWeight: 500 }}>
+        <div className="pf-product-footer">
+          <div className="pf-product-price-note">
             <i className="bi bi-tag me-1"></i>Prix sur devis
           </div>
           <Link to={`/catalogue/${product.id}`} className="pf-btn-devis">
-            <i className="bi bi-cart-plus"></i>Demander un devis
+            <span>Demander un devis</span>
+            <i className="bi bi-arrow-right"></i>
           </Link>
         </div>
       </div>
-    </div>
+    </article>
   );
 };

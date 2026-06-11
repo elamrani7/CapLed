@@ -1,9 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { QuantitySelector } from '../components/shared/QuantitySelector';
+import { resolveAssetUrl } from '../api/assets';
+
+const CartItemImage = ({ item }: { item: any }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUrl = resolveAssetUrl(item.image);
+
+  if (!imageUrl || imageFailed) {
+    return <i className="bi bi-image text-muted fs-4"></i>;
+  }
+
+  return (
+    <img
+      src={imageUrl}
+      alt={item.nom}
+      className="w-100 h-100 object-fit-contain p-1"
+      onError={() => setImageFailed(true)}
+    />
+  );
+};
 
 export const CartPage = () => {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
@@ -47,11 +66,7 @@ export const CartPage = () => {
                         <td className="ps-4 py-3">
                           <div className="d-flex align-items-center gap-3">
                             <div className="bg-light border rounded overflow-hidden flex-shrink-0 d-flex justify-content-center align-items-center" style={{ width: '80px', height: '80px' }}>
-                              {item.image ? (
-                                <img src={item.image} alt={item.nom} className="w-100 h-100 object-fit-contain p-1" />
-                              ) : (
-                                <i className="bi bi-image text-muted fs-4"></i>
-                              )}
+                              <CartItemImage item={item} />
                             </div>
                             <div>
                               <h6 className="mb-1 fw-bold text-dark lh-sm" style={{ maxWidth: '300px' }}>

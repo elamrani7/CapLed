@@ -22,7 +22,7 @@
             </Border.Effect>
             
             <StackPanel>
-                <TextBlock Text="CapLed" 
+                <TextBlock Text="PartFinder" 
                            FontSize="32" 
                            FontWeight="Bold" 
                            Foreground="#1A2436" 

@@ -1,5 +1,5 @@
 /**
- * Utilitaire de gestion des erreurs API pour le site public CapLed.
+ * Utilitaire de gestion des erreurs API pour le site public PartFinder.
  *
  * Le backend retourne désormais un format standardisé :
  * { "code": "LEAD_EMPTY_CART", "message": "..." }

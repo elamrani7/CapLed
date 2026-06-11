@@ -10,6 +10,7 @@ import { ProductImageGallery } from '../components/catalogue/ProductImageGallery
 import { EavTable } from '../components/catalogue/EavTable';
 import { EtatDetailCard } from '../components/catalogue/EtatDetailCard';
 import { ProductCard } from '../components/catalogue/ProductCard';
+import { resolveAssetUrl } from '../api/assets';
 
 export const ProductDetailPage = () => {
   const { id } = useParams();
@@ -50,7 +51,7 @@ export const ProductDetailPage = () => {
       nom: product.nom,
       prixVente: product.prixVente,
       reference: product.reference,
-      image: product.urlImagePrincipale || (product.images?.length > 0 ? product.images[0] : null)
+      image: resolveAssetUrl(product.urlImagePrincipale || (product.images?.length > 0 ? product.images[0] : null))
     }, 1);
     
     setShowToast(true);

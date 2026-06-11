@@ -13,7 +13,7 @@
         xmlns:login="clr-namespace:CapLed.Desktop.Views.Login"
         xmlns:crm="clr-namespace:CapLed.Desktop.Views.CRM"
         xmlns:crmvm="clr-namespace:CapLed.Desktop.ViewModels.CRM"
-        Title="CapLed — Gestion de Stock"
+        Title="PartFinder — Gestion de Stock"
         MinWidth="1100" MinHeight="680"
         Width="1280" Height="780"
         WindowStartupLocation="CenterScreen"
@@ -61,7 +61,7 @@
         <!-- ── Nav Button Style ─────────────────────────────────────────── -->
         <Style x:Key="NavButton" TargetType="Button">
             <Setter Property="Background"         Value="Transparent"/>
-            <Setter Property="Foreground"         Value="#B0BEC5"/>
+            <Setter Property="Foreground"         Value="#CBD5E1"/>
             <Setter Property="BorderThickness"    Value="0"/>
             <Setter Property="Height"             Value="48"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -80,7 +80,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#1AFFFFFF"/>
+                                <Setter TargetName="Border" Property="Background" Value="#17385F"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -91,7 +91,7 @@
         <!-- Active nav button override -->
         <Style x:Key="NavButtonActive" TargetType="Button" BasedOn="{StaticResource NavButton}">
             <Setter Property="Foreground"  Value="White"/>
-            <Setter Property="Background"  Value="#1AFFFFFF"/>
+            <Setter Property="Background"  Value="#17385F"/>
             <Setter Property="FontWeight"  Value="SemiBold"/>
         </Style>
     </Window.Resources>
@@ -114,40 +114,40 @@
 
         <!-- ════ SIDEBAR ═══════════════════════════════════════════════════ -->
         <Border Grid.Column="0"
-                Background="#1A2436"
+                Background="#0B1F3A"
                 Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVis}}">
             <DockPanel>
 
                 <!-- Logo / Brand -->
                 <Border DockPanel.Dock="Top"
                         Padding="20,28,20,20"
-                        BorderBrush="#2D3C52"
+                        BorderBrush="#183657"
                         BorderThickness="0,0,0,1">
                     <StackPanel>
-                        <TextBlock Text="CapLed"
+                        <TextBlock Text="PartFinder"
                                    Foreground="White"
                                    FontSize="22"
                                    FontWeight="Bold"
                                    FontFamily="Segoe UI"/>
                         <TextBlock Text="Gestion de stock"
-                                   Foreground="#78909C"
+                                   Foreground="#FFB347"
                                    FontSize="11"
                                    FontFamily="Segoe UI"/>
                     </StackPanel>
                 </Border>
 
                 <!-- User Profile -->
-                <Border DockPanel.Dock="Top" Padding="20,15" Background="#131B29">
+                <Border DockPanel.Dock="Top" Padding="20,15" Background="#071A30">
                     <StackPanel>
                         <TextBlock Text="{Binding UserFullName}" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
-                        <TextBlock Text="{Binding UserRoleDisplay}" Foreground="#78909C" FontSize="11"/>
+                        <TextBlock Text="{Binding UserRoleDisplay}" Foreground="#94A3B8" FontSize="11"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Nav Section Label -->
                 <TextBlock DockPanel.Dock="Top"
                            Text="MENU PRINCIPAL"
-                           Foreground="#455A64"
+                           Foreground="#64748B"
                            FontSize="10"
                            FontWeight="Bold"
                            FontFamily="Segoe UI"
@@ -165,7 +165,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveSection}" Value="Dashboard">
                                         <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="Background" Value="#17385F"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -184,7 +184,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveSection}" Value="Equipment">
                                         <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="Background" Value="#17385F"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -203,7 +203,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveSection}" Value="Categories">
                                         <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="Background" Value="#17385F"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -222,7 +222,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveSection}" Value="Stock">
                                         <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="Background" Value="#17385F"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -241,7 +241,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveSection}" Value="Ventes / CRM">
                                         <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="Background" Value="#17385F"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -260,7 +260,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveSection}" Value="Documents">
                                         <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="Background" Value="#17385F"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -279,7 +279,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveSection}" Value="Alerts">
                                         <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="Background" Value="#17385F"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -299,7 +299,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveSection}" Value="Users">
                                         <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#1AFFFFFF"/>
+                                        <Setter Property="Background" Value="#17385F"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -316,7 +316,7 @@
                 <!-- Bottom: version / user info -->
                 <Border DockPanel.Dock="Bottom"
                         Padding="20,12"
-                        BorderBrush="#2D3C52"
+                        BorderBrush="#183657"
                         BorderThickness="0,1,0,0">
                     <StackPanel>
                         <Button Command="{Binding LogoutCommand}" 
@@ -328,7 +328,7 @@
                                 Padding="0" 
                                 Cursor="Hand"
                                 Margin="0,0,0,10"/>
-                        <TextBlock Text="CapLed v1.0"
+                        <TextBlock Text="PartFinder v1.0"
                                    Foreground="#455A64"
                                    FontSize="11"
                                    FontFamily="Segoe UI"/>
@@ -358,7 +358,7 @@
                                Text="{Binding ActiveSection}"
                                FontSize="16"
                                FontWeight="SemiBold"
-                               Foreground="#1A2436"
+                               Foreground="#0B1F3A"
                                FontFamily="Segoe UI"
                                VerticalAlignment="Center"/>
 

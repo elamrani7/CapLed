@@ -99,7 +99,7 @@ export const Footer = () => {
       <div className="pf-footer-bottom">
         <p className="mb-0">
           © {new Date().getFullYear()} PartFinder.ma — Tous droits réservés.
-          &nbsp;|&nbsp; Propulsé par <strong style={{ color: 'var(--pf-gold)' }}>CapLed ERP</strong>
+          &nbsp;|&nbsp; Propulsé par <strong style={{ color: 'var(--pf-gold)' }}>PartFinder ERP</strong>
         </p>
       </div>
     </footer>

@@ -24,13 +24,16 @@
             
             <!-- Base Action Button -->
             <Style x:Key="ActionButton" TargetType="Button">
-                <Setter Property="Background" Value="#3B82F6"/>
+                <Setter Property="Background" Value="#003366"/>
                 <Setter Property="Foreground" Value="White"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Padding" Value="15,8"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="13"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
@@ -55,7 +58,7 @@
 
             <!-- Specific Buttons for CategoryView -->
             <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButton}">
-                <Setter Property="Background" Value="#2563EB"/>
+                <Setter Property="Background" Value="#003366"/>
             </Style>
 
             <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButton}">
@@ -82,7 +85,7 @@
                 </Style.Resources>
                 <Style.Triggers>
                     <Trigger Property="IsFocused" Value="True">
-                        <Setter Property="BorderBrush" Value="#3B82F6"/>
+                        <Setter Property="BorderBrush" Value="#003366"/>
                         <Setter Property="BorderThickness" Value="1.5"/>
                     </Trigger>
                 </Style.Triggers>
@@ -90,8 +93,8 @@
 
             <!-- DataGrid Styles -->
             <Style x:Key="FlatColumnHeaderStyle" TargetType="DataGridColumnHeader">
-                <Setter Property="Background" Value="#F1F5F9"/>
-                <Setter Property="Foreground" Value="#475569"/>
+                <Setter Property="Background" Value="#F8FAFC"/>
+                <Setter Property="Foreground" Value="#334155"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Padding" Value="15,12"/>
                 <Setter Property="BorderThickness" Value="0,0,0,2"/>
@@ -105,8 +108,8 @@
                 <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                 <Style.Triggers>
                     <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Background" Value="#DBEAFE"/>
-                        <Setter Property="Foreground" Value="#1E40AF"/>
+                        <Setter Property="Background" Value="#EEF4FB"/>
+                        <Setter Property="Foreground" Value="#003366"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -215,7 +218,7 @@
                 <Setter Property="Background" Value="White"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="BorderBrush" Value="#E2E8F0"/>
-                <Setter Property="RowHeight" Value="42"/>
+                <Setter Property="RowHeight" Value="44"/>
                 <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
                 <Setter Property="GridLinesVisibility" Value="Horizontal"/>
                 <Setter Property="HorizontalGridLinesBrush" Value="#F1F5F9"/>

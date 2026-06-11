@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
-import { ProductCard } from '../components/catalogue/ProductCard';
+import { ProductCard, ProductCardSkeleton } from '../components/catalogue/ProductCard';
 import { catalogueApi } from '../api/catalogueApi';
 
 const FAMILLE_ICONS: Record<string, string> = {
@@ -29,6 +29,7 @@ export const HomePage = () => {
   const [latestProducts, setLatestProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [productsLoading, setProductsLoading] = useState(true);
 
   useEffect(() => {
     catalogueApi.getFamilles().then(f => setFamilles(Array.isArray(f) ? f : [])).catch(() => {});
@@ -37,7 +38,8 @@ export const HomePage = () => {
         setLatestProducts(r?.items?.slice(0, 8) || []);
         setTotalProducts(r?.totalCount || 0);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setProductsLoading(false));
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -192,8 +194,8 @@ export const HomePage = () => {
       {/* ══════════════════════════════════
           DERNIERS PRODUITS
       ══════════════════════════════════ */}
-      {latestProducts.length > 0 && (
-        <section className="py-5" style={{ background: 'var(--pf-gray-bg)' }}>
+      {(productsLoading || latestProducts.length > 0) && (
+        <section className="py-5" style={{ background: 'var(--pf-bg)' }}>
           <div className="container">
             <div className="d-flex justify-content-between align-items-end mb-4">
               <div>
@@ -204,12 +206,18 @@ export const HomePage = () => {
                 Voir tout <i className="bi bi-arrow-right"></i>
               </Link>
             </div>
-            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3">
-              {latestProducts.map(p => (
-                <div key={p.id} className="col">
-                  <ProductCard product={p} />
-                </div>
-              ))}
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3 g-xl-4">
+              {productsLoading
+                ? Array.from({ length: 4 }).map((_, idx) => (
+                    <div key={idx} className="col">
+                      <ProductCardSkeleton />
+                    </div>
+                  ))
+                : latestProducts.map(p => (
+                    <div key={p.id} className="col">
+                      <ProductCard product={p} />
+                    </div>
+                  ))}
             </div>
             <div className="text-center mt-4 d-md-none">
               <Link to="/catalogue" className="btn btn-primary fw-bold px-5">Voir tout le catalogue</Link>

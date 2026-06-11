@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
-
-const API_BASE = 'https://capled-api.onrender.com';
+import { API_BASE_URL } from '../api/httpClient';
 
 export const EmailConfirmationPage = () => {
   const [searchParams] = useSearchParams();
@@ -23,7 +22,7 @@ export const EmailConfirmationPage = () => {
     const confirmEmail = async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/v1/ClientAuth/confirm-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
+          `${API_BASE_URL}/api/v1/ClientAuth/confirm-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
         );
         const data = await res.json();
 

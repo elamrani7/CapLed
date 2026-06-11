@@ -94,7 +94,7 @@ export const RegisterPage = () => {
                 <div className="text-center mb-4">
                   <i className="bi bi-person-plus" style={{ fontSize: '2.5rem', color: '#0056A6' }}></i>
                   <h3 className="fw-bold mt-2 mb-1">Créer un compte</h3>
-                  <p className="text-muted small">Accédez à votre espace client CapLed</p>
+                  <p className="text-muted small">Accédez à votre espace client PartFinder</p>
                 </div>
 
                 {error && (

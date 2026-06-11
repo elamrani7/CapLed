@@ -3,8 +3,7 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { catalogueApi } from '../api/catalogueApi';
-import { ProductCard } from '../components/catalogue/ProductCard';
-import { Loader } from '../components/shared/Loader';
+import { ProductCard, ProductCardSkeleton } from '../components/catalogue/ProductCard';
 import { Pagination } from '../components/shared/Pagination';
 
 export const CataloguePage = () => {
@@ -127,17 +126,21 @@ export const CataloguePage = () => {
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
       <Navbar />
-      <main className="flex-grow-1 container-fluid px-4 py-4">
-        <div className="d-flex justify-content-between align-items-end mb-3 border-bottom pb-2">
-          <h1 className="fw-bolder text-dark m-0 fs-3">Catalogue Public</h1>
-          <span className="text-secondary small fw-bold">{totalItems} article(s) trouvé(s)</span>
+      <main className="flex-grow-1 pf-catalog-shell">
+        <div className="pf-catalog-header">
+          <div>
+            <span className="pf-page-eyebrow">Catalogue B2B</span>
+            <h1>Catalogue industriel</h1>
+            <p>Trouvez rapidement les pieces et equipements adaptes a votre besoin.</p>
+          </div>
+          <span className="pf-result-count">{totalItems} article(s) trouve(s)</span>
         </div>
 
-        <div className="row g-3">
+        <div className="row g-4">
           
           {/* Sidebar Filtrage (Auto-Doc Style) */}
           <aside className="col-lg-3">
-            <div className="card shadow-sm border-0 mb-4">
+            <div className="card pf-filter-card mb-4">
               <div className="sidebar-filter-header d-flex justify-content-between align-items-center">
                 <span><i className="bi bi-funnel-fill me-2 text-primary"></i>Filtres</span>
                 <button 
@@ -244,8 +247,12 @@ export const CataloguePage = () => {
           {/* Grille Articles */}
           <section className="col-lg-9">
             {loading ? (
-              <div className="card shadow-sm border-0 p-5 text-center">
-                <Loader message="Recherche des articles en cours..." />
+              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3 g-xl-4 mb-4">
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <div className="col" key={idx}>
+                    <ProductCardSkeleton />
+                  </div>
+                ))}
               </div>
             ) : error ? (
               <div className="alert alert-danger" role="alert">
@@ -272,7 +279,7 @@ export const CataloguePage = () => {
               </div>
             ) : (
               <>
-                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3 mb-4">
+                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3 g-xl-4 mb-4">
                   {products.map((p) => (
                     <div className="col" key={p.id}>
                       <ProductCard product={p} />
