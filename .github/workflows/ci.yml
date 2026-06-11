@@ -20,17 +20,39 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore CapLed.sln
+    - name: Restore backend and test dependencies
+      run: |
+        dotnet restore CapLed.API/CapLed.API.csproj
+        dotnet restore CapLed.Tests.Unit/CapLed.Tests.Unit.csproj
+        dotnet restore CapLed.Tests.Integration/CapLed.Tests.Integration.csproj
 
-    - name: Build
-      run: dotnet build CapLed.sln --configuration Release --no-restore
+    - name: Build API
+      run: dotnet build CapLed.API/CapLed.API.csproj --configuration Release --no-restore
 
     - name: Run Unit Tests
-      run: dotnet test CapLed.Tests.Unit/CapLed.Tests.Unit.csproj --no-build --configuration Release --verbosity normal
+      run: dotnet test CapLed.Tests.Unit/CapLed.Tests.Unit.csproj --configuration Release --no-restore --verbosity normal
 
     - name: Run Integration Tests
-      run: dotnet test CapLed.Tests.Integration/CapLed.Tests.Integration.csproj --no-build --configuration Release --verbosity normal
+      run: dotnet test CapLed.Tests.Integration/CapLed.Tests.Integration.csproj --configuration Release --no-restore --verbosity normal
+
+  build-desktop:
+    name: WPF Desktop CI
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore Desktop dependencies
+      run: dotnet restore CapLed.Desktop/CapLed.Desktop.csproj
+
+    - name: Build Desktop App
+      run: dotnet build CapLed.Desktop/CapLed.Desktop.csproj --configuration Release --no-restore
 
   build-frontend:
     name: Frontend React CI
@@ -44,6 +66,8 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20' # Vite / TS usually prefers Node 18 or 20+
+        cache: 'npm'
+        cache-dependency-path: './capled-catalog/package-lock.json'
 
     - name: Install dependencies
       working-directory: ./capled-catalog
