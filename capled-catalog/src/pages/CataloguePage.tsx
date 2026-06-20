@@ -131,9 +131,9 @@ export const CataloguePage = () => {
           <div>
             <span className="pf-page-eyebrow">Catalogue B2B</span>
             <h1>Catalogue industriel</h1>
-            <p>Trouvez rapidement les pieces et equipements adaptes a votre besoin.</p>
+            <p>Trouvez rapidement les pièces et équipements adaptés à votre besoin.</p>
           </div>
-          <span className="pf-result-count">{totalItems} article(s) trouve(s)</span>
+          <span className="pf-result-count">{totalItems} article(s) trouvé(s)</span>
         </div>
 
         <div className="row g-4">

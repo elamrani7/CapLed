@@ -29,9 +29,11 @@ export const ProductImageGallery = ({ images, reference }: ProductImageGalleryPr
   if (visibleImages.length === 0) {
     return (
       <div className="pf-gallery-empty">
-        <span className="text-muted fw-medium fs-5">
-          <i className="bi bi-image"></i> Image non disponible
-        </span>
+        <div className="pf-gallery-empty-content">
+          <i className="bi bi-image"></i>
+          <span>Image non disponible</span>
+          <small>{reference}</small>
+        </div>
       </div>
     );
   }
@@ -39,17 +41,16 @@ export const ProductImageGallery = ({ images, reference }: ProductImageGalleryPr
   const mainImage = visibleImages[activeIndex] || visibleImages[0];
 
   return (
-    <div className="row g-3 flex-column-reverse flex-lg-row">
+    <div className="pf-gallery">
       {visibleImages.length > 1 && (
-        <div className="col-lg-2 d-flex flex-row flex-lg-column gap-2 overflow-auto" style={{ maxHeight: '400px' }}>
+        <div className="pf-gallery-thumbs" aria-label="Autres vues du produit">
           {visibleImages.map((img, idx) => (
             <button
               key={img}
+              type="button"
               onClick={() => setActiveIndex(idx)}
-              className={`pf-gallery-thumb p-0 bg-white rounded overflow-hidden flex-shrink-0 ${
-                activeIndex === idx ? 'border border-primary border-2 opacity-100' : 'border border-transparent opacity-50'
-              }`}
-              style={{ width: '80px', height: '80px', transition: 'all 0.2s' }}
+              className={`pf-gallery-thumb ${activeIndex === idx ? 'active' : ''}`}
+              aria-label={`Afficher la vue ${idx + 1}`}
             >
               <img
                 src={img}
@@ -62,15 +63,12 @@ export const ProductImageGallery = ({ images, reference }: ProductImageGalleryPr
         </div>
       )}
 
-      <div className="col flex-grow-1">
-        <div className="bg-white border rounded overflow-hidden shadow-sm d-flex align-items-center justify-content-center p-3" style={{ height: '400px' }}>
-          <img
-            src={mainImage}
-            alt={`Apercu ${reference}`}
-            className="w-100 h-100 object-fit-contain"
-            onError={() => markImageFailed(mainImage)}
-          />
-        </div>
+      <div className="pf-gallery-main">
+        <img
+          src={mainImage}
+          alt={`Aperçu ${reference}`}
+          onError={() => markImageFailed(mainImage)}
+        />
       </div>
     </div>
   );

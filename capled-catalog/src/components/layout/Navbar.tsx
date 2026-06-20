@@ -52,11 +52,8 @@ export const Navbar = () => {
         {/* ── Main Row ── */}
         <div className="pf-nav-inner">
           {/* Logo */}
-          <Link to="/" className="text-decoration-none d-flex align-items-center gap-2 flex-shrink-0">
-            <div className="bg-primary text-white rounded d-flex align-items-center justify-content-center flex-shrink-0"
-              style={{ width: 34, height: 34, fontSize: '1.1rem' }}>
-              <i className="bi bi-gears"></i>
-            </div>
+          <Link to="/" className="pf-brand-link">
+            <img src="/partfinder-icon.svg" alt="PartFinder" className="pf-brand-icon" />
             <span>
               <span className="pf-logo-part">Part</span>
               <span className="pf-logo-name"> Finder</span>

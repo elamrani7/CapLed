@@ -10,9 +10,7 @@ export const Footer = () => {
           {/* Col 1 — Logo + Description */}
           <div className="col-lg-4">
             <div className="d-flex align-items-center gap-2 mb-3">
-              <div className="bg-primary text-white rounded d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }}>
-                <i className="bi bi-gears" style={{ fontSize: '1.2rem' }}></i>
-              </div>
+              <img src="/partfinder-icon.svg" alt="PartFinder" className="pf-footer-brand-icon" />
               <span style={{ fontSize: '1.4rem', fontWeight: 800 }}>
                 <span style={{ color: '#fff' }}>Part</span>
                 <span style={{ color: 'var(--pf-gold)' }}>Finder</span>

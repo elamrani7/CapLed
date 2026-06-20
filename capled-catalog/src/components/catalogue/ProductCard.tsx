@@ -45,7 +45,7 @@ export const ProductCard = ({ product }: { product: any }) => {
             src={imageUrl}
             alt={product.nom}
             onError={() => setImageFailed(true)}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '12px' }}
+            className="pf-product-image"
           />
         ) : (
           <ProductFallbackVisual product={product} />
@@ -90,7 +90,7 @@ export const ProductCard = ({ product }: { product: any }) => {
           </div>
           <Link to={`/catalogue/${product.id}`} className="pf-btn-devis">
             <span>Demander un devis</span>
-            <i className="bi bi-arrow-right"></i>
+            <i className="bi bi-arrow-right-short"></i>
           </Link>
         </div>
       </div>
