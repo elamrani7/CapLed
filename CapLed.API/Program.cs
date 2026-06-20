@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using StockManager.Core.Domain.Entities;
 using StockManager.Core.Domain.Entities.Stock;
+using StockManager.API.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -151,82 +152,86 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Ensure Database is Migrated & Seed Default User
-using (var scope = app.Services.CreateScope())
+// Ensure Database is Migrated & Seed Default User.
+// Integration tests replace the DbContext and seed their own isolated data.
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var services = scope.ServiceProvider;
-    try
+    using (var scope = app.Services.CreateScope())
     {
-        var context = services.GetRequiredService<StockManagementDbContext>();
-        context.Database.Migrate();
-
-        // Seed Default Admin User if none exists
-        var adminEmail = "admin@capled.com";
-        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
-        
-        if (adminUser == null)
+        var services = scope.ServiceProvider;
+        try
         {
-            var admin = new User
+            var context = services.GetRequiredService<StockManagementDbContext>();
+            context.Database.Migrate();
+
+            // Seed Default Admin User if none exists
+            var adminEmail = "admin@capled.com";
+            var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
+            
+            if (adminUser == null)
             {
-                FullName = "Administrateur",
-                Email = adminEmail,
-                Role = StockManager.Core.Domain.Enums.UserRole.ADMIN
-            };
-            var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
-            admin.PasswordHash = hasher.HashPassword(admin, "Admin123!");
-            context.Users.Add(admin);
-            await context.SaveChangesAsync();
-        }
-        else
-        {
-            // Ensure password is reset for testing if user exists
-            var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
-            adminUser.PasswordHash = hasher.HashPassword(adminUser, "Admin123!");
-            await context.SaveChangesAsync();
-        }
-
-        // Seed/Align Depots (Casablanca & Tanger) using raw SQL to guarantee IDs 1 and 2
-        await context.Database.ExecuteSqlRawAsync(@"
-            INSERT IGNORE INTO Depots (Id, Nom, EstActif, CreatedAt) VALUES (1, 'Casablanca', 1, NOW());
-            INSERT IGNORE INTO Depots (Id, Nom, EstActif, CreatedAt) VALUES (2, 'Tanger', 1, NOW());
-            UPDATE Depots SET Id=1 WHERE Nom='Casablanca' AND Id != 1;
-            UPDATE Depots SET Id=2 WHERE Nom='Tanger' AND Id != 2;
-        ");
-
-        // Data Sync: If articles have legacy Quantity but no StockQuantite, move them to Casablanca
-        var articlesToSync = await context.Equipments
-            .Where(e => !context.StockQuantites.Any(sq => sq.ArticleId == e.Id))
-            .ToListAsync();
-
-        if (articlesToSync.Any())
-        {
-            foreach (var art in articlesToSync)
-            {
-                context.StockQuantites.Add(new StockQuantite
+                var admin = new User
                 {
-                    ArticleId = art.Id,
-                    DepotId = 1, // Casa gets the legacy stock
-                    Quantite = art.Quantity,
-                    SeuilMinimum = art.MinThreshold,
-                    LastUpdatedAt = DateTime.UtcNow
-                });
-
-                context.StockQuantites.Add(new StockQuantite
-                {
-                    ArticleId = art.Id,
-                    DepotId = 2, // Tanger initialized at 0
-                    Quantite = 0,
-                    SeuilMinimum = art.MinThreshold,
-                    LastUpdatedAt = DateTime.UtcNow
-                });
+                    FullName = "Administrateur",
+                    Email = adminEmail,
+                    Role = StockManager.Core.Domain.Enums.UserRole.ADMIN
+                };
+                var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
+                admin.PasswordHash = hasher.HashPassword(admin, "Admin123!");
+                context.Users.Add(admin);
+                await context.SaveChangesAsync();
             }
-            await context.SaveChangesAsync();
+            else
+            {
+                // Ensure password is reset for testing if user exists
+                var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
+                adminUser.PasswordHash = hasher.HashPassword(adminUser, "Admin123!");
+                await context.SaveChangesAsync();
+            }
+
+            // Seed/Align Depots (Casablanca & Tanger) using raw SQL to guarantee IDs 1 and 2
+            await context.Database.ExecuteSqlRawAsync(@"
+                INSERT IGNORE INTO Depots (Id, Nom, EstActif, CreatedAt) VALUES (1, 'Casablanca', 1, NOW());
+                INSERT IGNORE INTO Depots (Id, Nom, EstActif, CreatedAt) VALUES (2, 'Tanger', 1, NOW());
+                UPDATE Depots SET Id=1 WHERE Nom='Casablanca' AND Id != 1;
+                UPDATE Depots SET Id=2 WHERE Nom='Tanger' AND Id != 2;
+            ");
+
+            // Data Sync: If articles have legacy Quantity but no StockQuantite, move them to Casablanca
+            var articlesToSync = await context.Equipments
+                .Where(e => !context.StockQuantites.Any(sq => sq.ArticleId == e.Id))
+                .ToListAsync();
+
+            if (articlesToSync.Any())
+            {
+                foreach (var art in articlesToSync)
+                {
+                    context.StockQuantites.Add(new StockQuantite
+                    {
+                        ArticleId = art.Id,
+                        DepotId = 1, // Casa gets the legacy stock
+                        Quantite = art.Quantity,
+                        SeuilMinimum = art.MinThreshold,
+                        LastUpdatedAt = DateTime.UtcNow
+                    });
+
+                    context.StockQuantites.Add(new StockQuantite
+                    {
+                        ArticleId = art.Id,
+                        DepotId = 2, // Tanger initialized at 0
+                        Quantite = 0,
+                        SeuilMinimum = art.MinThreshold,
+                        LastUpdatedAt = DateTime.UtcNow
+                    });
+                }
+                await context.SaveChangesAsync();
+            }
         }
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred during DB migration/seeding. Cause: {Message}", ex.Message);
+        catch (Exception ex)
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred during DB migration/seeding. Cause: {Message}", ex.Message);
+        }
     }
 }
 
@@ -239,18 +244,13 @@ app.UseSwaggerUI();
 
 // app.UseHttpsRedirection(); // Removed to prevent CORS / Network Error issues with self-signed SSL certs on local dev
 
-// Ensure uploads directory exists
-var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "equipments");
-if (!Directory.Exists(uploadsPath))
-{
-    Directory.CreateDirectory(uploadsPath);
-}
+UploadStorage.EnsureEquipmentImagesDirectory();
 
+app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
-    RequestPath = ""
+    FileProvider = UploadStorage.CreateEquipmentImagesProvider(),
+    RequestPath = UploadStorage.EquipmentImagesRequestPath
 });
 
 app.UseCors("AllowAll");

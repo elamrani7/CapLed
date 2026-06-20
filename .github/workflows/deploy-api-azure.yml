@@ -3,6 +3,11 @@ name: Deploy API to Azure App Service
 on:
   push:
     branches: [ "stable-version" ]
+    paths:
+      - "CapLed.API/**"
+      - "CapLed.Core/**"
+      - "CapLed.Infrastructure/**"
+      - ".github/workflows/deploy-api-azure.yml"
   workflow_dispatch:
 
 jobs:

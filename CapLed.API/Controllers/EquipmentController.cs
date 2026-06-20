@@ -4,6 +4,7 @@ using StockManager.Core.Application.DTOs;
 using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Domain.Entities;
 using StockManager.Core.Domain.Enums;
+using StockManager.API.Infrastructure;
 
 using Microsoft.AspNetCore.Authorization;
 
@@ -112,14 +113,14 @@ public class EquipmentController : ControllerBase
 
         if (files == null || files.Count == 0) return BadRequest("Aucun fichier reçu.");
 
-        var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "equipments");
+        var uploadsPath = UploadStorage.EquipmentImagesDirectory;
         bool isFirstPhoto = !existing.Photos.Any();
 
         foreach (var file in files)
         {
             if (file.Length > 0)
             {
-                var fileName = $"{Guid.NewGuid()}_{file.FileName.Replace(" ", "_")}";
+                var fileName = UploadStorage.BuildSafeStoredFileName(file.FileName);
                 var filePath = Path.Combine(uploadsPath, fileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
@@ -130,7 +131,7 @@ public class EquipmentController : ControllerBase
                 existing.Photos.Add(new Photo
                 {
                     EquipmentId = id,
-                    Url = $"/images/equipments/{fileName}",
+                    Url = UploadStorage.BuildEquipmentImageUrl(fileName),
                     IsPrimary = isFirstPhoto
                 });
                 
@@ -156,7 +157,7 @@ public class EquipmentController : ControllerBase
         var photo = existing.Photos.FirstOrDefault(p => p.Id == photoId);
         if (photo == null) return NotFound("Image introuvable.");
 
-        var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", photo.Url.TrimStart('/'));
+        var physicalPath = UploadStorage.BuildEquipmentImagePhysicalPath(photo.Url);
         if (System.IO.File.Exists(physicalPath))
         {
             System.IO.File.Delete(physicalPath);
