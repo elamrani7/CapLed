@@ -18,7 +18,12 @@ public class ClientAuthControllerTests
     private readonly Mock<IUnitOfWork> _uowMock;
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<IConfiguration> _configMock;
-    private readonly ClientAuthController _sut;
+    private ClientAuthController Sut => new(
+        _clientRepoMock.Object,
+        _uowMock.Object,
+        _emailMock.Object,
+        _configMock.Object
+    );
 
     public ClientAuthControllerTests()
     {
@@ -27,16 +32,10 @@ public class ClientAuthControllerTests
         _emailMock = new Mock<IEmailService>();
         _configMock = new Mock<IConfiguration>();
 
-        _sut = new ClientAuthController(
-            _clientRepoMock.Object,
-            _uowMock.Object,
-            _emailMock.Object,
-            _configMock.Object
-        );
     }
 
     [Fact]
-    public async Task Register_RequiresEmailConfirmation()
+    public async Task Register_ByDefault_ConfirmsClientImmediately()
     {
         // Arrange
         var dto = new ClientRegisterDto
@@ -49,18 +48,18 @@ public class ClientAuthControllerTests
         _clientRepoMock.Setup(x => x.GetByEmailAsync(dto.Email)).ReturnsAsync((Client?)null);
 
         // Act
-        var result = await _sut.Register(dto);
+        var result = await Sut.Register(dto);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
 
-        _clientRepoMock.Verify(x => x.AddAsync(It.Is<Client>(c => c.IsEmailConfirmed == false && c.ConfirmationToken != null)), Times.Once);
+        _clientRepoMock.Verify(x => x.AddAsync(It.Is<Client>(c => c.IsEmailConfirmed == true && c.ConfirmationToken == null)), Times.Once);
         _uowMock.Verify(x => x.SaveChangesAsync(), Times.Once);
-        _emailMock.Verify(x => x.SendConfirmationEmailAsync(dto.Email, dto.Nom, It.IsAny<string>()), Times.Once);
+        _emailMock.Verify(x => x.SendConfirmationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
-    public async Task Login_WithoutConfirmation_ThrowsForbiddenException()
+    public async Task Login_ByDefault_AllowsUnconfirmedClient()
     {
         // Arrange
         var client = new Client
@@ -80,7 +79,33 @@ public class ClientAuthControllerTests
         _clientRepoMock.Setup(x => x.GetByEmailAsync(dto.Email)).ReturnsAsync(client);
 
         // Act
-        Func<Task> act = async () => await _sut.Login(dto);
+        var result = await Sut.Login(dto);
+
+        // Assert
+        result.Result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task Login_WhenEmailConfirmationRequired_WithoutConfirmation_ThrowsForbiddenException()
+    {
+        // Arrange
+        _configMock.Setup(x => x["ClientAuth:RequireEmailConfirmation"]).Returns("true");
+
+        var client = new Client
+        {
+            Email = "test@capled.com",
+            IsEmailConfirmed = false
+        };
+
+        var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Client>();
+        client.PasswordHash = hasher.HashPassword(client, "Password123!");
+
+        var dto = new ClientLoginDto { Email = "test@capled.com", Password = "Password123!" };
+
+        _clientRepoMock.Setup(x => x.GetByEmailAsync(dto.Email)).ReturnsAsync(client);
+
+        // Act
+        Func<Task> act = async () => await Sut.Login(dto);
 
         // Assert
         var exception = await act.Should().ThrowAsync<ForbiddenException>();

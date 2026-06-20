@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { leadApi } from '../api/leadApi';
@@ -8,6 +9,7 @@ import { getErrorMessage } from '../utils/apiErrors';
 
 export const CheckoutPage = () => {
   const { cartItems, totalItems, clearCart } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -20,6 +22,16 @@ export const CheckoutPage = () => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+
+    setFormData(prev => ({
+      ...prev,
+      nomProprietaire: prev.nomProprietaire || user.fullName || '',
+      email: prev.email || user.email || '',
+    }));
+  }, [user]);
 
   if (cartItems.length === 0 && !loading) {
     return (

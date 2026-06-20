@@ -11,6 +11,22 @@ const httpClient = axios.create({
   },
 });
 
+httpClient.interceptors.request.use((config) => {
+  try {
+    const savedAuth = localStorage.getItem('capled_auth');
+    if (savedAuth) {
+      const auth = JSON.parse(savedAuth);
+      if (auth?.token) {
+        config.headers.Authorization = `Bearer ${auth.token}`;
+      }
+    }
+  } catch {
+    localStorage.removeItem('capled_auth');
+  }
+
+  return config;
+});
+
 httpClient.interceptors.response.use(
   (response) => response.data,
   (error) => {

@@ -1,18 +1,85 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext<any>(null);
 
 export const useCart = () => useContext(CartContext);
 
-export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-  const [cartItems, setCartItems] = useState<any[]>(() => {
-    const saved = localStorage.getItem('capled_cart');
-    return saved ? JSON.parse(saved) : [];
+const LEGACY_CART_KEY = 'capled_cart';
+const GUEST_CART_KEY = 'partfinder_cart_guest';
+
+const getCartStorageKey = (user: any) =>
+  user?.clientId ? `partfinder_cart_client_${user.clientId}` : GUEST_CART_KEY;
+
+const loadCart = (storageKey: string) => {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) return JSON.parse(saved);
+
+    if (storageKey === GUEST_CART_KEY) {
+      const legacy = localStorage.getItem(LEGACY_CART_KEY);
+      return legacy ? JSON.parse(legacy) : [];
+    }
+  } catch {
+    return [];
+  }
+
+  return [];
+};
+
+const mergeCartItems = (targetItems: any[], sourceItems: any[]) => {
+  const merged = [...targetItems];
+
+  sourceItems.forEach((sourceItem) => {
+    const existingIndex = merged.findIndex(item => item.articleId === sourceItem.articleId);
+    if (existingIndex >= 0) {
+      merged[existingIndex] = {
+        ...merged[existingIndex],
+        ...sourceItem,
+        quantity: (merged[existingIndex].quantity || 0) + (sourceItem.quantity || 0),
+      };
+    } else {
+      merged.push(sourceItem);
+    }
   });
 
+  return merged;
+};
+
+export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  const storageKey = useMemo(() => getCartStorageKey(user), [user?.clientId]);
+  const skipNextSave = useRef(false);
+  const previousStorageKey = useRef(storageKey);
+  const [cartItems, setCartItems] = useState<any[]>(() => loadCart(storageKey));
+
   useEffect(() => {
-    localStorage.setItem('capled_cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    const previousKey = previousStorageKey.current;
+    previousStorageKey.current = storageKey;
+
+    if (previousKey === GUEST_CART_KEY && storageKey !== GUEST_CART_KEY) {
+      const mergedCart = mergeCartItems(loadCart(storageKey), loadCart(GUEST_CART_KEY));
+      localStorage.setItem(storageKey, JSON.stringify(mergedCart));
+      localStorage.removeItem(GUEST_CART_KEY);
+      localStorage.removeItem(LEGACY_CART_KEY);
+
+      skipNextSave.current = true;
+      setCartItems(mergedCart);
+      return;
+    }
+
+    skipNextSave.current = true;
+    setCartItems(loadCart(storageKey));
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+
+    localStorage.setItem(storageKey, JSON.stringify(cartItems));
+  }, [cartItems, storageKey]);
 
   const addToCart = (product: any, quantity = 1) => {
     setCartItems((prev: any[]) => {
