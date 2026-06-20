@@ -24,7 +24,10 @@ public partial class App : Application
 
     private void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton(new HttpClient { BaseAddress = new Uri("https://capled-api.onrender.com/") });
+        services.AddSingleton(new HttpClient
+        {
+            BaseAddress = new Uri("https://partfinder-api-eisi2026-d0b6hucygcc4egae.francecentral-01.azurewebsites.net/")
+        });
         services.AddSingleton<IConfirmationService, WpfConfirmationService>();
         
         services.AddSingleton<EquipmentService>();
