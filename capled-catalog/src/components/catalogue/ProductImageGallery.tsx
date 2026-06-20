@@ -55,7 +55,6 @@ export const ProductImageGallery = ({ images, reference }: ProductImageGalleryPr
               <img
                 src={img}
                 alt={`${reference} vue ${idx + 1}`}
-                className="w-100 h-100 object-fit-cover"
                 onError={() => markImageFailed(img)}
               />
             </button>
