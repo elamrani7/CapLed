@@ -20,13 +20,15 @@ public class StockServiceV1Tests
 {
     private readonly Mock<IEquipmentRepository> _equipmentMock;
     private readonly Mock<IStockMovementRepository> _movementMock;
+    private readonly Mock<IStockQuantiteRepository> _stockQuantiteMock;
     private readonly StockService _sut;
 
     public StockServiceV1Tests()
     {
         _equipmentMock = new Mock<IEquipmentRepository>();
         _movementMock = new Mock<IStockMovementRepository>();
-        _sut = new StockService(_equipmentMock.Object, _movementMock.Object);
+        _stockQuantiteMock = new Mock<IStockQuantiteRepository>();
+        _sut = new StockService(_equipmentMock.Object, _movementMock.Object, _stockQuantiteMock.Object);
     }
 
     // ── RecordEntryAsync ─────────────────────────────────────────────────────
@@ -37,7 +39,8 @@ public class StockServiceV1Tests
         var equipment = new Equipment { Id = 1, Name = "Cable RJ45", Quantity = 10 };
         _equipmentMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(equipment);
 
-        var result = await _sut.RecordEntryAsync(1, 5, userId: 1, remarks: "Réception fournisseur");
+        // depotId is required by the current service signature
+        var result = await _sut.RecordEntryAsync(1, 5, userId: 1, depotId: 1, remarks: "Réception fournisseur");
 
         result.Should().NotBeNull();
         result.Type.Should().Be(MovementType.ENTRY);
@@ -48,11 +51,25 @@ public class StockServiceV1Tests
     }
 
     [Fact]
+    public async Task RecordEntryAsync_NewDepotStock_CreatesStockQuantiteRecord()
+    {
+        var equipment = new Equipment { Id = 1, Name = "Cable RJ45", Quantity = 10 };
+        _equipmentMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(equipment);
+        _stockQuantiteMock.Setup(x => x.GetByArticleAndDepotAsync(1, 1)).ReturnsAsync((StockManager.Core.Domain.Entities.Stock.StockQuantite?)null);
+
+        var result = await _sut.RecordEntryAsync(1, 5, userId: 1, depotId: 1, remarks: "Réception fournisseur");
+
+        result.Should().NotBeNull();
+        _stockQuantiteMock.Verify(x => x.AddAsync(It.Is<StockManager.Core.Domain.Entities.Stock.StockQuantite>(sq => sq.ArticleId == 1 && sq.DepotId == 1 && sq.Quantite == 5)), Times.Once);
+        _movementMock.Verify(x => x.AddAsync(It.IsAny<StockMovement>()), Times.Once);
+    }
+
+    [Fact]
     public async Task RecordEntryAsync_ArticleNotFound_ThrowsNotFoundException()
     {
         _equipmentMock.Setup(x => x.GetByIdAsync(999)).ReturnsAsync((Equipment?)null);
 
-        Func<Task> act = async () => await _sut.RecordEntryAsync(999, 5, 1);
+        Func<Task> act = async () => await _sut.RecordEntryAsync(999, 5, 1, depotId: 1);
 
         var ex = await act.Should().ThrowAsync<NotFoundException>();
         ex.Which.Code.Should().Be("ARTICLE_NOT_FOUND");
@@ -66,7 +83,9 @@ public class StockServiceV1Tests
         var equipment = new Equipment { Id = 2, Name = "Switch", Quantity = 20 };
         _equipmentMock.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(equipment);
 
-        var result = await _sut.RecordExitAsync(2, 8, userId: 1);
+        // Provide depotId for exit
+        _stockQuantiteMock.Setup(x => x.GetByArticleAndDepotAsync(2, 1)).ReturnsAsync(new StockManager.Core.Domain.Entities.Stock.StockQuantite { ArticleId = 2, DepotId = 1, Quantite = 20 });
+        var result = await _sut.RecordExitAsync(2, 8, userId: 1, depotId: 1);
 
         result.Type.Should().Be(MovementType.EXIT);
         equipment.Quantity.Should().Be(12); // 20 - 8
@@ -78,7 +97,21 @@ public class StockServiceV1Tests
         var equipment = new Equipment { Id = 3, Name = "Routeur", Quantity = 2 };
         _equipmentMock.Setup(x => x.GetByIdAsync(3)).ReturnsAsync(equipment);
 
-        Func<Task> act = async () => await _sut.RecordExitAsync(3, 10, 1);
+        _stockQuantiteMock.Setup(x => x.GetByArticleAndDepotAsync(3, 1)).ReturnsAsync(new StockManager.Core.Domain.Entities.Stock.StockQuantite { ArticleId = 3, DepotId = 1, Quantite = 2 });
+        Func<Task> act = async () => await _sut.RecordExitAsync(3, 10, 1, depotId: 1);
+
+        var ex = await act.Should().ThrowAsync<DomainException>();
+        ex.Which.Code.Should().Be("STOCK_INSUFFICIENT");
+    }
+
+    [Fact]
+    public async Task RecordExitAsync_NoDepotStock_ThrowsDomainException()
+    {
+        var equipment = new Equipment { Id = 4, Name = "Switch", Quantity = 5 };
+        _equipmentMock.Setup(x => x.GetByIdAsync(4)).ReturnsAsync(equipment);
+        _stockQuantiteMock.Setup(x => x.GetByArticleAndDepotAsync(4, 2)).ReturnsAsync((StockManager.Core.Domain.Entities.Stock.StockQuantite?)null);
+
+        Func<Task> act = async () => await _sut.RecordExitAsync(4, 1, 1, depotId: 2);
 
         var ex = await act.Should().ThrowAsync<DomainException>();
         ex.Which.Code.Should().Be("STOCK_INSUFFICIENT");
@@ -89,7 +122,7 @@ public class StockServiceV1Tests
     {
         _equipmentMock.Setup(x => x.GetByIdAsync(404)).ReturnsAsync((Equipment?)null);
 
-        Func<Task> act = async () => await _sut.RecordExitAsync(404, 1, 1);
+        Func<Task> act = async () => await _sut.RecordExitAsync(404, 1, 1, depotId: 1);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
