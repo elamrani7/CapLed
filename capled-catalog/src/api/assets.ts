@@ -19,3 +19,21 @@ export const resolveAssetUrl = (path?: string | null) => {
 
   return `${API_BASE_URL}${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
 };
+
+export const resolveProductImageUrls = (product?: any) => {
+  if (!product) return [];
+
+  const rawPaths = [
+    product.image,
+    product.urlImagePrincipale,
+    ...(Array.isArray(product.images) ? product.images : []),
+  ];
+
+  return Array.from(
+    new Set(
+      rawPaths
+        .map(resolveAssetUrl)
+        .filter((url): url is string => !!url)
+    )
+  );
+};

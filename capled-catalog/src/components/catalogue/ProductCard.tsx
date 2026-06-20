@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BadgeDisponibilite, BadgeCondition } from '../shared/Badge';
-import { resolveAssetUrl } from '../../api/assets';
+import { resolveProductImageUrls } from '../../api/assets';
+import { catalogueApi } from '../../api/catalogueApi';
 
 export const ProductCardSkeleton = () => (
   <div className="pf-product-card pf-product-card-skeleton" aria-hidden="true">
@@ -27,15 +28,44 @@ const ProductFallbackVisual = ({ product }: { product: any }) => (
 );
 
 export const ProductCard = ({ product }: { product: any }) => {
-  const [imageFailed, setImageFailed] = useState(false);
-  const imageUrl = resolveAssetUrl(product.urlImagePrincipale);
-  const hasImage = !!imageUrl && !imageFailed;
+  const initialImageUrls = useMemo(() => resolveProductImageUrls(product), [product]);
+  const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
+  const [imageIndex, setImageIndex] = useState(0);
+  const [detailFallbackLoaded, setDetailFallbackLoaded] = useState(false);
+  const imageUrl = imageUrls[imageIndex];
+  const hasImage = !!imageUrl;
   const hasDispoInfo = product.disponibiliteBadge &&
     product.disponibiliteBadge.toUpperCase() !== 'NON_SPECIFIE' &&
     product.disponibiliteBadge.toUpperCase() !== 'NON SPECIFIE' &&
     product.disponibiliteBadge.toUpperCase() !== 'NON SPÉCIFIÉ';
   const hasCondition = product.condition &&
     product.condition.toUpperCase() !== 'NON_SPECIFIE';
+
+  const handleImageError = async () => {
+    if (imageIndex < imageUrls.length - 1) {
+      setImageIndex((current) => current + 1);
+      return;
+    }
+
+    if (!detailFallbackLoaded && product.id) {
+      setDetailFallbackLoaded(true);
+      try {
+        const detail = await catalogueApi.getProductById(product.id);
+        const nextUrls = resolveProductImageUrls(detail);
+        if (nextUrls.length > 0) {
+          setImageUrls(nextUrls);
+          setImageIndex(0);
+        } else {
+          setImageUrls([]);
+        }
+      } catch {
+        setImageUrls([]);
+      }
+      return;
+    }
+
+    setImageUrls([]);
+  };
 
   return (
     <article className="pf-product-card">
@@ -44,7 +74,7 @@ export const ProductCard = ({ product }: { product: any }) => {
           <img
             src={imageUrl}
             alt={product.nom}
-            onError={() => setImageFailed(true)}
+            onError={handleImageError}
             className="pf-product-image"
           />
         ) : (

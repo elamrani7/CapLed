@@ -16,19 +16,33 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addToCart = (product: any, quantity = 1) => {
     setCartItems((prev: any[]) => {
-      const existing = prev.find(item => item.articleId === product.id);
+      const articleId = product.articleId ?? product.id;
+      const existing = prev.find(item => item.articleId === articleId);
       if (existing) {
-        return prev.map(item => 
-          item.articleId === product.id 
-            ? { ...item, quantity: item.quantity + quantity }
+        return prev.map(item =>
+          item.articleId === articleId
+            ? {
+                ...item,
+                nom: product.nom ?? item.nom,
+                prixVente: product.prixVente ?? item.prixVente,
+                reference: product.reference ?? item.reference,
+                image: product.image ?? item.image,
+                images: product.images ?? item.images,
+                urlImagePrincipale: product.urlImagePrincipale ?? item.urlImagePrincipale,
+                quantity: item.quantity + quantity,
+              }
             : item
         );
       }
-      return [...prev, { 
-        articleId: product.id, 
-        nom: product.nom, 
-        prixVente: product.prixVente, 
-        quantity 
+      return [...prev, {
+        articleId,
+        nom: product.nom,
+        prixVente: product.prixVente,
+        reference: product.reference,
+        image: product.image,
+        images: product.images,
+        urlImagePrincipale: product.urlImagePrincipale,
+        quantity,
       }];
     });
   };

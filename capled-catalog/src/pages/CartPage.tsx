@@ -1,16 +1,49 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { QuantitySelector } from '../components/shared/QuantitySelector';
-import { resolveAssetUrl } from '../api/assets';
+import { resolveProductImageUrls } from '../api/assets';
+import { catalogueApi } from '../api/catalogueApi';
 
 const CartItemImage = ({ item }: { item: any }) => {
-  const [imageFailed, setImageFailed] = useState(false);
-  const imageUrl = resolveAssetUrl(item.image);
+  const initialImageUrls = useMemo(() => resolveProductImageUrls(item), [item]);
+  const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
+  const [imageIndex, setImageIndex] = useState(0);
+  const [detailLoaded, setDetailLoaded] = useState(false);
+  const imageUrl = imageUrls[imageIndex];
 
-  if (!imageUrl || imageFailed) {
+  useEffect(() => {
+    let mounted = true;
+
+    if (imageUrls.length > 0 || detailLoaded || !item.articleId) return;
+
+    setDetailLoaded(true);
+    catalogueApi.getProductById(item.articleId)
+      .then((detail) => {
+        if (!mounted) return;
+        setImageUrls(resolveProductImageUrls(detail));
+        setImageIndex(0);
+      })
+      .catch(() => {
+        if (mounted) setImageUrls([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [detailLoaded, imageUrls.length, item.articleId]);
+
+  const handleImageError = () => {
+    if (imageIndex < imageUrls.length - 1) {
+      setImageIndex((current) => current + 1);
+    } else {
+      setImageUrls([]);
+    }
+  };
+
+  if (!imageUrl) {
     return <i className="bi bi-image text-muted fs-4"></i>;
   }
 
@@ -19,7 +52,7 @@ const CartItemImage = ({ item }: { item: any }) => {
       src={imageUrl}
       alt={item.nom}
       className="w-100 h-100 object-fit-contain p-1"
-      onError={() => setImageFailed(true)}
+      onError={handleImageError}
     />
   );
 };

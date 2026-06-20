@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { catalogueApi } from '../api/catalogueApi';
-import { resolveAssetUrl } from '../api/assets';
+import { resolveProductImageUrls } from '../api/assets';
 import { useCart } from '../context/CartContext';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
@@ -45,6 +45,7 @@ export const ProductDetailPage = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
+    const imageUrls = resolveProductImageUrls(product);
 
     addToCart({
       id: product.id,
@@ -52,7 +53,9 @@ export const ProductDetailPage = () => {
       nom: product.nom,
       prixVente: product.prixVente,
       reference: product.reference,
-      image: resolveAssetUrl(product.urlImagePrincipale || (product.images?.length > 0 ? product.images[0] : null)),
+      image: imageUrls[0] || null,
+      images: product.images,
+      urlImagePrincipale: product.urlImagePrincipale,
     }, 1);
 
     setShowToast(true);
