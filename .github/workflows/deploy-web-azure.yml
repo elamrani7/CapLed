@@ -1,0 +1,40 @@
+name: Deploy React Web to Azure App Service
+
+on:
+  push:
+    branches: [ "stable-version" ]
+  workflow_dispatch:
+
+jobs:
+  deploy-web:
+    name: Deploy PartFinder Web
+    runs-on: windows-latest
+
+    env:
+      VITE_API_BASE_URL: https://partfinder-api-eisi2026-d0b6hucygcc4egae.francecentral-01.azurewebsites.net
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: capled-catalog/package-lock.json
+
+      - name: Install dependencies
+        working-directory: capled-catalog
+        run: npm ci
+
+      - name: Build React app
+        working-directory: capled-catalog
+        run: npm run build
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: partfinder-web-eisi2026
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_WEB }}
+          package: capled-catalog/dist
