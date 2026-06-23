@@ -29,8 +29,18 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.AlertLevel, opt => opt.MapFrom(src => StockAlertHelper.GetAlertLevel(src.Quantity)))
             .ForMember(dest => dest.TypeGestionStock, opt => opt.MapFrom(src => src.Category != null ? src.Category.TypeGestionStock : string.Empty))
             .ForMember(dest => dest.MinThreshold, opt => opt.MapFrom(src => src.MinThreshold))
-            .ForMember(dest => dest.QuantityCasa, opt => opt.MapFrom(src => (src.StockQuantites != null) ? src.StockQuantites.Where(sq => sq.DepotId == 1).Sum(sq => sq.Quantite) : 0))
-            .ForMember(dest => dest.QuantityTanger, opt => opt.MapFrom(src => (src.StockQuantites != null) ? src.StockQuantites.Where(sq => sq.DepotId == 2).Sum(sq => sq.Quantite) : 0))
+            .ForMember(dest => dest.QuantityCasa, opt => opt.MapFrom(src =>
+                src.StockQuantites != null
+                    ? src.StockQuantites
+                        .Where(sq => sq.Depot != null && sq.Depot.Nom == "Casablanca")
+                        .Sum(sq => sq.Quantite)
+                    : 0))
+            .ForMember(dest => dest.QuantityTanger, opt => opt.MapFrom(src =>
+                src.StockQuantites != null
+                    ? src.StockQuantites
+                        .Where(sq => sq.Depot != null && sq.Depot.Nom == "Tanger")
+                        .Sum(sq => sq.Quantite)
+                    : 0))
             .ForMember(dest => dest.PrixVente, opt => opt.MapFrom(src => src.PrixVente));
 
         CreateMap<Equipment, EquipmentReadDto>()

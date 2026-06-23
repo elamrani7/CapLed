@@ -24,6 +24,7 @@ public class EquipmentRepository : IEquipmentRepository
                 .ThenInclude(v => v.ChampSpecifique)
             .Include(e => e.EtatDetail)
             .Include(e => e.StockQuantites)
+                .ThenInclude(sq => sq.Depot)
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 
@@ -40,6 +41,7 @@ public class EquipmentRepository : IEquipmentRepository
             .Include(e => e.Category)
             .Include(e => e.Photos)
             .Include(e => e.StockQuantites)
+                .ThenInclude(sq => sq.Depot)
             .AsQueryable();
 
         if (familleId.HasValue)

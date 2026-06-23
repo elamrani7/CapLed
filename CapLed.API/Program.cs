@@ -189,13 +189,28 @@ if (!app.Environment.IsEnvironment("Testing"))
                 await context.SaveChangesAsync();
             }
 
-            // Seed/Align Depots (Casablanca & Tanger) using raw SQL to guarantee IDs 1 and 2
+            // Seed/align depots by business name. Never force primary keys here:
+            // existing production databases may already contain legacy depot IDs.
             await context.Database.ExecuteSqlRawAsync(@"
-                INSERT IGNORE INTO Depots (Id, Nom, EstActif, CreatedAt) VALUES (1, 'Casablanca', 1, NOW());
-                INSERT IGNORE INTO Depots (Id, Nom, EstActif, CreatedAt) VALUES (2, 'Tanger', 1, NOW());
-                UPDATE Depots SET Id=1 WHERE Nom='Casablanca' AND Id != 1;
-                UPDATE Depots SET Id=2 WHERE Nom='Tanger' AND Id != 2;
+                INSERT INTO Depots (Nom, Code, Adresse, EstActif, CreatedAt)
+                VALUES
+                    ('Casablanca', 'CASA', 'Casablanca, Maroc', 1, NOW(6)),
+                    ('Tanger', 'TNG', 'Tanger, Maroc', 1, NOW(6))
+                ON DUPLICATE KEY UPDATE
+                    Code = VALUES(Code),
+                    Adresse = VALUES(Adresse),
+                    EstActif = 1;
             ");
+
+            var casablancaDepotId = await context.Depots
+                .Where(d => d.Nom == "Casablanca")
+                .Select(d => d.Id)
+                .FirstAsync();
+
+            var tangerDepotId = await context.Depots
+                .Where(d => d.Nom == "Tanger")
+                .Select(d => d.Id)
+                .FirstAsync();
 
             // Data Sync: If articles have legacy Quantity but no StockQuantite, move them to Casablanca
             var articlesToSync = await context.Equipments
@@ -209,7 +224,7 @@ if (!app.Environment.IsEnvironment("Testing"))
                     context.StockQuantites.Add(new StockQuantite
                     {
                         ArticleId = art.Id,
-                        DepotId = 1, // Casa gets the legacy stock
+                        DepotId = casablancaDepotId, // Casa gets the legacy stock
                         Quantite = art.Quantity,
                         SeuilMinimum = art.MinThreshold,
                         LastUpdatedAt = DateTime.UtcNow
@@ -218,7 +233,7 @@ if (!app.Environment.IsEnvironment("Testing"))
                     context.StockQuantites.Add(new StockQuantite
                     {
                         ArticleId = art.Id,
-                        DepotId = 2, // Tanger initialized at 0
+                        DepotId = tangerDepotId, // Tanger initialized at 0
                         Quantite = 0,
                         SeuilMinimum = art.MinThreshold,
                         LastUpdatedAt = DateTime.UtcNow
