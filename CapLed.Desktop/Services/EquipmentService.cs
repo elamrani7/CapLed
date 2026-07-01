@@ -15,6 +15,7 @@ public class EquipmentService : ApiClientBase
     /// GET api/v1/Equipment?categoryId=&condition=&search=&page=&pageSize=
     /// </summary>
     public async Task<PagedResult<EquipmentListItemModel>> GetAllAsync(
+        int? familleId = null,
         int? categoryId = null,
         string? condition = null,
         string? search = null,
@@ -22,6 +23,7 @@ public class EquipmentService : ApiClientBase
         int pageSize = 20)
     {
         var query = BuildQuery(
+            ("familleId", familleId?.ToString()),
             ("categoryId", categoryId?.ToString()),
             ("condition", condition),
             ("search", search),
@@ -51,6 +53,23 @@ public class EquipmentService : ApiClientBase
     /// <summary>DELETE api/v1/Equipment/{id}</summary>
     public Task<bool> DeleteAsync(int id)
         => DeleteAsync($"api/v1/Equipment/{id}");
+
+    // ─── IMAGES ──────────────────────────────────────────────────────────────
+
+    /// <summary>POST api/v1/Equipment/{id}/images</summary>
+    public Task<EquipmentDetailModel> UploadImagesAsync(int id, IEnumerable<string> filePaths)
+        => PostMultipartAsync<EquipmentDetailModel>($"api/v1/Equipment/{id}/images", filePaths);
+
+    /// <summary>PUT api/v1/Equipment/{id}/images/{photoId}/primary</summary>
+    public async Task<bool> SetPrimaryImageAsync(int id, int photoId)
+    {
+        var result = await PutAsync($"api/v1/Equipment/{id}/images/{photoId}/primary", new { });
+        return result;
+    }
+
+    /// <summary>DELETE api/v1/Equipment/{id}/images/{photoId}</summary>
+    public Task<bool> DeleteImageAsync(int id, int photoId)
+        => DeleteAsync($"api/v1/Equipment/{id}/images/{photoId}");
 
     // ─── Helper ──────────────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CapLed.Desktop.Services;
 
@@ -18,6 +19,7 @@ public abstract class ApiClientBase
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter() }
     };
 
     protected ApiClientBase(HttpClient httpClient)
@@ -25,7 +27,15 @@ public abstract class ApiClientBase
         Http = httpClient;
     }
 
-    private void EnsureAuthHeader()
+    /// <summary>Vérifie si la réponse est un succès, sinon lève une ApiException propre.</summary>
+    protected async Task EnsureSuccessAsync(HttpResponseMessage response, string context = "API Call")
+    {
+        if (response.IsSuccessStatusCode) return;
+        var error = await HandleErrorResponse(response, context);
+        throw new ApiException(error);
+    }
+
+    protected void EnsureAuthHeader()
     {
         var token = CapLed.Desktop.Core.AppSession.Current.JwtToken;
         if (!string.IsNullOrEmpty(token))
@@ -41,19 +51,68 @@ public abstract class ApiClientBase
     protected async Task<T?> GetAsync<T>(string url)
     {
         EnsureAuthHeader();
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                return await response.Content.ReadFromJsonAsync<T>(JsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new ApiException($"Erreur lecture réponse JSON de {url}: {ex.Message}");
+            }
+        }
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return default;
+
+        var error = await HandleErrorResponse(response, $"GET {url}");
+        throw new ApiException(error);
+    }
+
+    /// <summary>
+    /// HTTP GET silencieux — utilisé pour les appels automatiques en arrière-plan.
+    /// Retourne null sans lever d'exception pour 401, 403, 404, 405.
+    /// Les erreurs sont loggées dans la console de débogage uniquement.
+    /// </summary>
+    protected async Task<T?> GetAsyncSilent<T>(string url)
+    {
         try
         {
+            EnsureAuthHeader();
             var response = await Http.GetAsync(url);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            if (response.IsSuccessStatusCode)
+            {
+                try { return await response.Content.ReadFromJsonAsync<T>(JsonOptions); }
+                catch (JsonException ex) { System.Diagnostics.Debug.WriteLine($"[SILENT] JSON parse error {url}: {ex.Message}"); }
                 return default;
+            }
 
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<T>(JsonOptions);
+            // Ces statuts sont attendus en mode silencieux → pas de popup
+            var silentStatuses = new[]
+            {
+                System.Net.HttpStatusCode.NotFound,
+                System.Net.HttpStatusCode.Unauthorized,
+                System.Net.HttpStatusCode.Forbidden,
+                System.Net.HttpStatusCode.MethodNotAllowed
+            };
+            if (Array.IndexOf(silentStatuses, response.StatusCode) >= 0)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SILENT] {(int)response.StatusCode} on GET {url} — ignored");
+                return default;
+            }
+
+            // Autres erreurs : log uniquement, pas de throw
+            System.Diagnostics.Debug.WriteLine($"[SILENT] Unexpected {(int)response.StatusCode} on GET {url}");
+            return default;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            throw new ApiException($"GET {url} failed: {ex.Message}", ex);
+            System.Diagnostics.Debug.WriteLine($"[SILENT] Network error on GET {url}: {ex.Message}");
+            return default;
         }
     }
 
@@ -67,7 +126,14 @@ public abstract class ApiClientBase
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions);
+            try
+            {
+                return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new ApiException($"Erreur lecture réponse JSON de {url}: {ex.Message}");
+            }
         }
 
         var error = await HandleErrorResponse(response, $"POST {url}");
@@ -86,27 +152,103 @@ public abstract class ApiClientBase
         throw new ApiException(error);
     }
 
+    /// <summary>HTTP POST pour l'upload de fichiers multiples (multipart/form-data).</summary>
+    protected async Task<TResponse> PostMultipartAsync<TResponse>(string url, IEnumerable<string> filePaths, string fileParamName = "files")
+    {
+        using var content = new MultipartFormDataContent();
+        
+        foreach (var filePath in filePaths)
+        {
+            var fileContent = new ByteArrayContent(await System.IO.File.ReadAllBytesAsync(filePath));
+            var mimeType = "image/jpeg";
+            var ext = System.IO.Path.GetExtension(filePath).ToLower();
+            if (ext == ".png") mimeType = "image/png";
+            else if (ext == ".gif") mimeType = "image/gif";
+            else if (ext == ".webp") mimeType = "image/webp";
+
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+            content.Add(fileContent, fileParamName, System.IO.Path.GetFileName(filePath));
+        }
+
+        var response = await Http.PostAsync(url, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<TResponse>(json, JsonOptions)!;
+        }
+
+        var error = await HandleErrorResponse(response, $"POST Multipart {url}");
+        throw new ApiException(error);
+    }
+
     protected async Task<string> HandleErrorResponse(HttpResponseMessage response, string context)
     {
-        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        string rawContent = string.Empty;
+        try
+        {
+            rawContent = await response.Content.ReadAsStringAsync();
+            System.Diagnostics.Debug.WriteLine($"API ERROR [{response.StatusCode}] {context}: {rawContent}");
+        }
+        catch { /* ignored */ }
+
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            return "Session expirée ou non autorisée. Veuillez vous reconnecter.";
+
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            return "Accès refusé. Vous n'avez pas les permissions nécessaires pour cette action.";
+
+        // ── Parse the standardized backend error format: { code, message } ──
+        if (!string.IsNullOrWhiteSpace(rawContent))
         {
             try
             {
-                // Try to parse ASP.NET Core Validation Problem JSON
-                var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
-                if (problem.TryGetProperty("errors", out var errors))
+                using var doc = JsonDocument.Parse(rawContent);
+                var root = doc.RootElement;
+
+                // Standard format: { "code": "...", "message": "..." }
+                if (root.TryGetProperty("message", out var msgProp) && 
+                    !string.IsNullOrWhiteSpace(msgProp.GetString()))
                 {
-                    return $"{context} validation failed: {errors.ToString()}";
+                    return msgProp.GetString()!;
                 }
-                if (problem.TryGetProperty("detail", out var detail))
+
+                // Legacy ASP.NET validation format: { "errors": { "Field": ["msg"] } }
+                if (root.TryGetProperty("errors", out var errors))
                 {
-                    return $"{context} failed: {detail.GetString()}";
+                    var messages = new List<string>();
+                    foreach (var field in errors.EnumerateObject())
+                    {
+                        if (field.Value.ValueKind == JsonValueKind.Array)
+                            foreach (var msg in field.Value.EnumerateArray())
+                                if (msg.GetString() is { } s) messages.Add(s);
+                    }
+                    if (messages.Count > 0) return string.Join(" ", messages);
                 }
+
+                // Legacy format: { "error": "..." }
+                if (root.TryGetProperty("error", out var errorProp) &&
+                    !string.IsNullOrWhiteSpace(errorProp.GetString()))
+                {
+                    return errorProp.GetString()!;
+                }
+
+                // Short raw content fallback
+                if (rawContent.Length < 250 && !rawContent.TrimStart().StartsWith("{"))
+                    return rawContent;
             }
-            catch { /* fallback to generic error */ }
+            catch { /* Not valid JSON — fall through */ }
         }
 
-        return $"{context} failed: {response.ReasonPhrase} ({(int)response.StatusCode})";
+        // HTTP status fallbacks
+        return response.StatusCode switch
+        {
+            System.Net.HttpStatusCode.NotFound           => "La ressource demandée est introuvable.",
+            System.Net.HttpStatusCode.Conflict           => "Un conflit a été détecté. Vérifiez les données saisies.",
+            System.Net.HttpStatusCode.BadRequest         => "La demande est invalide. Vérifiez les informations saisies.",
+            System.Net.HttpStatusCode.InternalServerError => "Une erreur interne est survenue. Contactez l'administrateur.",
+            _ => $"{context} a échoué ({(int)response.StatusCode})."
+        };
     }
 
     // ─── PUT ─────────────────────────────────────────────────────────────────
@@ -115,15 +257,12 @@ public abstract class ApiClientBase
     protected async Task<bool> PutAsync<TRequest>(string url, TRequest body)
     {
         EnsureAuthHeader();
-        try
-        {
-            var response = await Http.PutAsJsonAsync(url, body, JsonOptions);
-            return response.IsSuccessStatusCode;
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new ApiException($"PUT {url} failed: {ex.Message}", ex);
-        }
+        var response = await Http.PutAsJsonAsync(url, body, JsonOptions);
+
+        if (response.IsSuccessStatusCode) return true;
+
+        var error = await HandleErrorResponse(response, $"PUT {url}");
+        throw new ApiException(error);
     }
 
     // ─── DELETE ──────────────────────────────────────────────────────────────
@@ -132,15 +271,12 @@ public abstract class ApiClientBase
     protected async Task<bool> DeleteAsync(string url)
     {
         EnsureAuthHeader();
-        try
-        {
-            var response = await Http.DeleteAsync(url);
-            return response.IsSuccessStatusCode;
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new ApiException($"DELETE {url} failed: {ex.Message}", ex);
-        }
+        var response = await Http.DeleteAsync(url);
+
+        if (response.IsSuccessStatusCode) return true;
+
+        var error = await HandleErrorResponse(response, $"DELETE {url}");
+        throw new ApiException(error);
     }
 }
 

@@ -33,7 +33,30 @@ public class EquipmentConfiguration : IEntityTypeConfiguration<Equipment>
         builder.Property(e => e.CreatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
+        // ── Step 1A: ERP / Site Vitrine columns ──────────────────────────────
+        builder.Property(e => e.DatasheetUrl)
+            .HasMaxLength(500);
+
+        builder.Property(e => e.DisponibiliteSite)
+            .IsRequired()
+            .HasMaxLength(30)
+            .HasDefaultValue("EN_STOCK");
+
+        builder.Property(e => e.VisibleSite)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        // ArticleSimilaireIds stored as TEXT (JSON array)
+        builder.Property(e => e.ArticleSimilaireIds)
+            .HasColumnType("TEXT");
+
+        builder.Property(e => e.PrixVente)
+            .HasPrecision(10, 2);
+
+        builder.Property(e => e.PrixAchat)
+            .HasPrecision(10, 2);
+        // ─────────────────────────────────────────────────────────────────────
+
         // Relationships handled in other configurations or inferred
     }
 }
-

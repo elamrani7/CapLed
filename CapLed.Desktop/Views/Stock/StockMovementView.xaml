@@ -113,32 +113,120 @@
                           GridLinesVisibility="Horizontal"
                           HorizontalGridLinesBrush="#F1F5F9"
                           Background="White"
-                          BorderThickness="0">
+                          BorderThickness="0"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="DATE / HEURE" Binding="{Binding Date, StringFormat='dd/MM/yyyy HH:mm'}" Width="140"/>
-                        <DataGridTextColumn Header="ÉQUIPEMENT" Binding="{Binding EquipmentName}" Width="*" FontWeight="Medium"/>
-                        
-                        <DataGridTemplateColumn Header="TYPE" Width="100">
+                        <!-- 1. ÉQUIPEMENT (Le "quoi" en premier) -->
+                        <DataGridTextColumn Header="ÉQUIPEMENT" Binding="{Binding EquipmentName}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                    <Setter Property="Padding" Value="10,0"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- 2. TYPE (badge coloré) -->
+                        <DataGridTemplateColumn Header="TYPE" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border Style="{StaticResource MovementBadge}">
+                                    <Border Style="{StaticResource MovementBadge}" Margin="5,0">
                                         <TextBlock Style="{StaticResource MovementText}"/>
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="QUANTITÉ" Binding="{Binding Quantity}" Width="100">
+                        <!-- 3. DÉPÔT (badge coloré Casa=bleu / Tanger=orange) -->
+                        <DataGridTemplateColumn Header="DÉPÔT" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" Margin="5,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#F1F5F9"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DepotNom}" Value="Casablanca">
+                                                        <Setter Property="Background" Value="#DBEAFE"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DepotNom}" Value="Tanger">
+                                                        <Setter Property="Background" Value="#FFEDD5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding DepotNom}" FontWeight="SemiBold" FontSize="11">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#475569"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DepotNom}" Value="Casablanca">
+                                                            <Setter Property="Foreground" Value="#1D4ED8"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding DepotNom}" Value="Tanger">
+                                                            <Setter Property="Foreground" Value="#C2410C"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- 4. QTÉ -->
+                        <DataGridTextColumn Header="QTÉ" Binding="{Binding Quantity}" Width="60">
                             <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                     <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Padding" Value="10,0"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <DataGridTextColumn Header="UTILISATEUR" Binding="{Binding UserName}" Width="120"/>
-                        <DataGridTextColumn Header="COMMENTAIRE" Binding="{Binding Comment}" Width="150" />
+                        <!-- 5. DATE / HEURE -->
+                        <DataGridTextColumn Header="DATE" Binding="{Binding Date, StringFormat='dd/MM/yy HH:mm'}" Width="110"/>
+
+                        <!-- 6. TRAÇABILITÉ : LOT ou N° Série -->
+                        <DataGridTemplateColumn Header="TRAÇABILITÉ" Width="140">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="5,0">
+                                        <Border CornerRadius="4" Padding="6,2" Margin="0,0,4,0"
+                                                Background="#EFF6FF"
+                                                Visibility="{Binding IsHistoricalLot, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Foreground="#1D4ED8" FontSize="11" FontWeight="SemiBold">
+                                                <Run Text="🏷️ "/>
+                                                <Run Text="{Binding HistoricalDisplayData, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </Border>
+                                        <Border CornerRadius="4" Padding="6,2"
+                                                Background="#F0FDF4"
+                                                Visibility="{Binding IsHistoricalSn, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Foreground="#15803D" FontSize="11" FontWeight="SemiBold">
+                                                <Run Text="🔢 "/>
+                                                <Run Text="{Binding HistoricalDisplayData, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </Border>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- 7. UTILISATEUR -->
+                        <DataGridTextColumn Header="PAR" Binding="{Binding UserName}" Width="Auto">
+                             <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="Padding" Value="10,0"/>
+                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
@@ -158,19 +246,43 @@
         </Grid>
 
         <!-- RIGHT COLUMN: REGISTRATION SIDEBAR -->
-        <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Effect="{DynamicResource SubtleShadow}">
+        <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" BorderBrush="#E2E8F0" BorderThickness="1">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                            <Setter Property="BorderBrush" Value="#2563EB"/>
+                            <Setter Property="BorderThickness" Value="2"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,10,0">
-                    <TextBlock Text="Nouveau Mouvement" FontSize="18" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,20"/>
+                    <DockPanel Margin="0,0,0,20">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="✨" Visibility="{Binding IsEditMode, Converter={StaticResource InverseBool}, ConverterParameter=Collapsed}"/>
+                            <TextBlock Text="✏️" Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}"/>
+                            <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold" Foreground="#1E293B" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <Button Content="+ Nouveau" 
+                                Command="{Binding CancelEditCommand}"
+                                DockPanel.Dock="Right"
+                                HorizontalAlignment="Right"
+                                Height="30" Padding="10,0"
+                                Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}"
+                                Style="{StaticResource ActionButton}"
+                                Background="#0F766E" ToolTip="Créer un nouveau mouvement (annule l'édition en cours)"/>
+                    </DockPanel>
 
                     <!-- Feedback Messages -->
-                    <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,12"
+                    <Border Style="{StaticResource ErrorMessageStyle}"
                             Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
-                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#B91C1C" FontSize="12" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding ErrorMessage}"/>
                     </Border>
-                    <Border Background="#DCFCE7" BorderBrush="#22C55E" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,12"
+                    <Border Style="{StaticResource SuccessMessageStyle}"
                             Visibility="{Binding SuccessMessage, Converter={StaticResource StringToVisibility}}">
-                        <TextBlock Text="{Binding SuccessMessage}" Foreground="#15803D" FontSize="12" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding SuccessMessage}"/>
                     </Border>
 
                     <!-- Form Fields -->
@@ -179,6 +291,38 @@
                         <ComboBox ItemsSource="{Binding EquipmentChoices}" 
                                   SelectedItem="{Binding SelectedEquipmentForNew}"
                                   DisplayMemberPath="Name"
+                                  Height="38" Padding="10,0"/>
+                    </StackPanel>
+
+                    <!-- Dépôt Selection (avec indicateur coloré) -->
+                    <StackPanel Margin="0,0,0,15">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#94A3B8"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedDepot.Id}" Value="1">
+                                                <Setter Property="Fill" Value="#3B82F6"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SelectedDepot.Id}" Value="2">
+                                                <Setter Property="Fill" Value="#F97316"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#475569">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="Dépôt source / destination *"/>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                        <ComboBox ItemsSource="{Binding Depots}" 
+                                  SelectedItem="{Binding SelectedDepot}"
+                                  DisplayMemberPath="Nom"
                                   Height="38" Padding="10,0"/>
                     </StackPanel>
 
@@ -235,6 +379,27 @@
                         <TextBox Text="{Binding MovementQuantity, UpdateSourceTrigger=PropertyChanged}" Height="38" Padding="10,0" VerticalContentAlignment="Center" FontSize="15" FontWeight="Bold"/>
                     </StackPanel>
 
+                    <!-- ─── CONDITIONAL: LOT MODE ─── -->
+                    <StackPanel Margin="0,0,0,15" Visibility="{Binding IsLotMode, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Numéro de Lot *" FontSize="12" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,0,6"/>
+                        <TextBox Text="{Binding NumeroLot, UpdateSourceTrigger=PropertyChanged}" Height="38" Padding="10,0" VerticalContentAlignment="Center" 
+                                 ToolTip="Référence d'identification du lot"/>
+                    </StackPanel>
+
+                    <!-- ─── CONDITIONAL: SERIALISE MODE ─── -->
+                    <StackPanel Margin="0,0,0,15" Visibility="{Binding IsSerialMode, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Numéros de Série *" FontSize="12" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,0,6"/>
+                        <ItemsControl ItemsSource="{Binding NumeroSeries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
+                                             Height="38" Padding="10,0" VerticalContentAlignment="Center" Margin="0,0,0,5"
+                                             ToolTip="Saisissez ou scannez un numéro de série (Scan Barcode)"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
                     <StackPanel Margin="0,0,0,15">
                         <TextBlock Text="Date du mouvement" FontSize="12" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,0,6"/>
                         <DatePicker SelectedDate="{Binding MovementDate}" Height="38" VerticalContentAlignment="Center"/>
@@ -246,15 +411,84 @@
                                  Height="80" TextWrapping="Wrap" AcceptsReturn="True" Padding="10" VerticalContentAlignment="Top"/>
                     </StackPanel>
 
-                    <Button Content="Valider le mouvement" 
-                            Command="{Binding RegisterMovementCommand}"
-                            Style="{StaticResource ActionButton}" 
+                    <!-- ═══ BANDEAU DE CONFIRMATION DÉPÔT ═══ -->
+                    <Border CornerRadius="8" Padding="12,10" Margin="0,0,0,15">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Setter Property="Background" Value="#F0F9FF"/>
+                                <Setter Property="BorderBrush" Value="#BAE6FD"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding SelectedDepot.Id}" Value="1"/>
+                                            <Condition Binding="{Binding SelectedEquipmentForNew, Converter={StaticResource NullToBool}}" Value="True"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Setter Property="Background" Value="#EFF6FF"/>
+                                        <Setter Property="BorderBrush" Value="#BFDBFE"/>
+                                    </MultiDataTrigger>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding SelectedDepot.Id}" Value="2"/>
+                                            <Condition Binding="{Binding SelectedEquipmentForNew, Converter={StaticResource NullToBool}}" Value="True"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Setter Property="Background" Value="#FFF7ED"/>
+                                        <Setter Property="BorderBrush" Value="#FED7AA"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel>
+                            <TextBlock FontSize="11" Foreground="#64748B" Margin="0,0,0,4">Vous modifiez le stock de :</TextBlock>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="#94A3B8"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedDepot.Id}" Value="1">
+                                                    <Setter Property="Fill" Value="#3B82F6"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedDepot.Id}" Value="2">
+                                                    <Setter Property="Fill" Value="#F97316"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <TextBlock Text="{Binding SelectedDepot.Nom}" FontSize="14" FontWeight="Bold" Foreground="#1E293B"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Command="{Binding RegisterMovementCommand}"
                             Height="44" FontSize="14" FontWeight="Bold"
-                            Background="#1E293B">
+                            IsEnabled="{Binding IsSaving, Converter={StaticResource InverseBool}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
+                                <Setter Property="Background" Value="#1E293B"/>
+                                <Setter Property="Content" Value="{Binding SubmitButtonText}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                        <Setter Property="Background" Value="#2563EB"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <Button.Effect>
                             <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
                         </Button.Effect>
                     </Button>
+
+                    <Button Content="Annuler / Nouveau" 
+                            Command="{Binding CancelEditCommand}"
+                            Style="{StaticResource ActionButton}" 
+                            Height="36" Margin="0,10,0,0"
+                            Background="Transparent" Foreground="#64748B" BorderBrush="#E2E8F0"
+                            Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}"/>
                     
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0"
                                 Visibility="{Binding IsSaving, Converter={StaticResource BoolToVis}}">

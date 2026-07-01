@@ -24,18 +24,6 @@ public class LoginViewModel : BaseViewModel
         set => SetProperty(ref _password, value);
     }
 
-    private bool _isLoggingIn;
-    public bool IsLoggingIn
-    {
-        get => _isLoggingIn;
-        set
-        {
-            if (SetProperty(ref _isLoggingIn, value))
-            {
-                OnPropertyChanged(nameof(IsLoading)); // Alias for BaseViewModel if needed
-            }
-        }
-    }
 
     public ICommand LoginCommand { get; }
 
@@ -47,12 +35,12 @@ public class LoginViewModel : BaseViewModel
         LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
     }
 
-    private bool CanExecuteLogin() => !string.IsNullOrWhiteSpace(Email) && !string.IsNullOrWhiteSpace(Password) && !IsLoggingIn;
+    private bool CanExecuteLogin() => !string.IsNullOrWhiteSpace(Email) && !string.IsNullOrWhiteSpace(Password) && !IsLoading;
 
     private async Task ExecuteLoginAsync()
     {
-        ErrorMessage = null;
-        IsLoggingIn = true;
+        ErrorMessage = string.Empty;
+        BeginOperation();
 
         try
         {
@@ -62,7 +50,7 @@ public class LoginViewModel : BaseViewModel
             {
                 // Navigate to dashboard or main shell
                 _mainViewModel.ShowDashboardCommand.Execute(null);
-                
+
                 // Clear password for security
                 Password = string.Empty;
             }
@@ -71,13 +59,19 @@ public class LoginViewModel : BaseViewModel
                 ErrorMessage = "Email ou mot de passe incorrect.";
             }
         }
+        catch (ApiException ex)
+        {
+            // Real API error (401 wrong credentials, network failure, etc.)
+            ErrorMessage = ex.Message;
+        }
         catch (Exception ex)
         {
-            ErrorMessage = $"Une erreur est survenue : {ex.Message}";
+            // Unexpected failure fallback
+            ErrorMessage = $"Une erreur inattendue est survenue : {ex.Message}";
         }
         finally
         {
-            IsLoggingIn = false;
+            EndOperation();
         }
     }
 }

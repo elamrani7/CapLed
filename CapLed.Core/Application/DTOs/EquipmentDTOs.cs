@@ -2,6 +2,7 @@ using StockManager.Core.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace StockManager.Core.Application.DTOs;
+using StockManager.Core.Application.DTOs.Catalogue;
 
 /* --- BACK-OFFICE DTOs --- */
 
@@ -13,13 +14,22 @@ public class EquipmentListItemDto
     public string CategoryName { get; set; } = string.Empty;
     public EquipmentCondition Condition { get; set; }
     public int Quantity { get; set; }
+    public int QuantityCasa { get; set; }
+    public int QuantityTanger { get; set; }
+    public StockAlertLevel AlertLevel { get; set; }
+    // Champs enrichis pour la vue inventaire
+    public string TypeGestionStock { get; set; } = string.Empty;
+    public int MinThreshold { get; set; }
+    public decimal? PrixVente { get; set; }
 }
 
 public class EquipmentReadDto : EquipmentListItemDto
 {
     public string? Description { get; set; }
-    public int MinThreshold { get; set; }
+    public new int MinThreshold { get; set; }
     public bool IsPublished { get; set; }
+    public bool VisibleSite { get; set; }
+    public new decimal? PrixVente { get; set; }
     public List<PhotoDto> Photos { get; set; } = new();
 }
 
@@ -45,6 +55,8 @@ public class EquipmentCreateDto
     public int MinThreshold { get; set; }
 
     public bool IsPublished { get; set; }
+    public bool VisibleSite { get; set; }
+    public decimal? PrixVente { get; set; }
 }
 
 public class EquipmentUpdateDto : EquipmentCreateDto
@@ -62,11 +74,15 @@ public class EquipmentCatalogItemDto
     public EquipmentCondition Condition { get; set; }
     public string? MainPhotoUrl { get; set; }
     public int AvailableQuantity { get; set; }
+    public decimal? PrixVente { get; set; }
 }
 
 public class EquipmentCatalogDetailDto : EquipmentCatalogItemDto
 {
     public string? Description { get; set; }
+    public new decimal? PrixVente { get; set; }
     public List<PhotoDto> Photos { get; set; } = new();
+    public List<ArticleChampValeurDto> ChampsSpecifiques { get; set; } = new();
+    public ArticleEtatDetailDto? EtatDetail { get; set; }
     // Simplified related equipment could be added here later
 }

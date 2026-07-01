@@ -11,6 +11,7 @@ namespace CapLed.Desktop.ViewModels;
 public class UserViewModel : BaseViewModel
 {
     private readonly UserService _userService;
+    private readonly IConfirmationService _confirmationService;
 
     // ─── Collections & Selection ─────────────────────────────────────────────
     public ObservableCollection<UserModel> Users { get; } = new();
@@ -45,27 +46,27 @@ public class UserViewModel : BaseViewModel
 
     private int? _editingUserId;
 
-    private bool _isSaving;
-    public bool IsSaving { get => _isSaving; set => SetProperty(ref _isSaving, value); }
-
     // ─── Commands ────────────────────────────────────────────────────────────
     public ICommand RefreshCommand { get; }
     public ICommand AddUserCommand { get; }
     public ICommand EditUserCommand { get; }
     public ICommand SaveUserCommand { get; }
     public ICommand DeleteUserCommand { get; }
+    public ICommand DeleteUserByRowCommand { get; }
     public ICommand ClearFormCommand { get; }
 
     // ─── Constructor ─────────────────────────────────────────────────────────
-    public UserViewModel(UserService userService)
+    public UserViewModel(UserService userService, IConfirmationService confirmationService)
     {
         _userService = userService;
+        _confirmationService = confirmationService;
 
         RefreshCommand = new AsyncRelayCommand(LoadUsersAsync);
         AddUserCommand = new RelayCommand(PrepareForAdd);
         EditUserCommand = new RelayCommand(PrepareForEdit, () => SelectedUser != null);
         SaveUserCommand = new AsyncRelayCommand(SaveUserAsync, () => !IsSaving);
         DeleteUserCommand = new AsyncRelayCommand(DeleteUserAsync, () => SelectedUser != null && !IsSaving);
+        DeleteUserByRowCommand = new AsyncRelayCommand(async (param) => await DeleteUserByRowAsync(param as UserModel), _ => !IsSaving);
         ClearFormCommand = new RelayCommand(ClearForm);
     }
 
@@ -77,13 +78,17 @@ public class UserViewModel : BaseViewModel
 
     public async Task LoadUsersAsync()
     {
-        IsLoading = true;
         ErrorMessage = null;
+        SuccessMessage = null;
+        BeginOperation();
         try
         {
             var result = await _userService.GetAllAsync();
             Users.Clear();
-            foreach (var u in result) Users.Add(u);
+            if (result != null)
+            {
+                foreach (var u in result) Users.Add(u);
+            }
         }
         catch (Exception ex)
         {
@@ -91,7 +96,7 @@ public class UserViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -139,9 +144,7 @@ public class UserViewModel : BaseViewModel
             }
         }
 
-        IsSaving = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        BeginSave();
 
         try
         {
@@ -182,8 +185,15 @@ public class UserViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
+    }
+
+    private async Task DeleteUserByRowAsync(UserModel? user)
+    {
+        if (user == null) return;
+        SelectedUser = user;
+        await DeleteUserAsync();
     }
 
     private async Task DeleteUserAsync()
@@ -196,8 +206,10 @@ public class UserViewModel : BaseViewModel
             return;
         }
 
-        IsSaving = true;
-        ErrorMessage = null;
+        if (!_confirmationService.Confirm("Suppression", $"Voulez-vous vraiment supprimer l'utilisateur '{SelectedUser.FullName}' ?"))
+            return;
+
+        BeginSave();
         try
         {
             bool success = await _userService.DeleteAsync(SelectedUser.Id);
@@ -214,7 +226,7 @@ public class UserViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
     }
 

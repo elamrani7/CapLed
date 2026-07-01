@@ -10,8 +10,9 @@ public class AlertReadDto
     public string EquipmentName { get; set; } = string.Empty;
     public int CurrentQuantity { get; set; }
     public int Threshold { get; set; }
+    public StockAlertLevel AlertLevel { get; set; }
     public DateTime CreatedAt { get; set; }
-    public string Status { get; set; } = "Active"; // Placeholder for status logic
+    public string Status { get; set; } = "Active"; 
 }
 
 public class AlertUpdateDto

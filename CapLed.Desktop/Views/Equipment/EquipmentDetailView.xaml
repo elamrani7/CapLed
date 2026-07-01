@@ -21,20 +21,24 @@
 
         <!-- 1. Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,25">
+            <Button Command="{Binding CancelCommand}" Style="{StaticResource BackButton}" HorizontalAlignment="Left" Margin="0,0,0,10">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="←" Margin="0,0,5,0"/>
+                    <TextBlock Text="Retour à la liste"/>
+                </StackPanel>
+            </Button>
             <TextBlock Text="{Binding Title}" FontSize="28" FontWeight="Bold" Foreground="#1A2436"/>
             
             <!-- Error Message -->
-            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" 
-                    CornerRadius="4" Padding="12" Margin="0,15,0,0"
+            <Border Style="{StaticResource ErrorMessageStyle}"
                     Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibility}}">
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="#B91C1C" FontWeight="Medium"/>
+                <TextBlock Text="{Binding ErrorMessage}"/>
             </Border>
 
             <!-- Success Message -->
-            <Border Background="#DCFCE7" BorderBrush="#22C55E" BorderThickness="1" 
-                    CornerRadius="4" Padding="12" Margin="0,15,0,0"
+            <Border Style="{StaticResource SuccessMessageStyle}"
                     Visibility="{Binding SuccessMessage, Converter={StaticResource StringToVisibility}}">
-                <TextBlock Text="{Binding SuccessMessage}" Foreground="#15803D" FontWeight="Medium"/>
+                <TextBlock Text="{Binding SuccessMessage}"/>
             </Border>
         </StackPanel>
 
@@ -72,6 +76,13 @@
                     <StackPanel>
                         <TextBlock Text="CONFIGURATION &amp; ÉTAT" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,15"/>
 
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <CheckBox Content="Rendre public" IsChecked="{Binding IsPublished}" Foreground="#1A2436" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            <CheckBox Content="Visible sur le site" IsChecked="{Binding VisibleSite}" Foreground="#475569" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            <TextBlock Text="Prix de Vente (HT) : " Foreground="#475569" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBox Text="{Binding PrixVente, UpdateSourceTrigger=PropertyChanged}" Width="100" Height="30" Padding="8,0" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -93,21 +104,97 @@
                                 <TextBlock Text="État actuel *" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
                                 <ComboBox ItemsSource="{Binding ConditionOptions}"
                                           SelectedItem="{Binding SelectedCondition}"
-                                          Height="36">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Converter={StaticResource EnumToString}}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+                                          Height="36"/>
                             </StackPanel>
                         </Grid>
 
                         <StackPanel Margin="0,15,0,0">
+                            <TextBlock Text="Détails de l'état (Si Occasion/Reconditionné)" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBox Grid.Column="0" Text="{Binding EtatDetail.GradeVisuel}" ToolTip="Grade Visuel (A, B, C...)" Height="30" Padding="8,0"/>
+                                <TextBox Grid.Column="2" Text="{Binding EtatDetail.PannesObservees}" ToolTip="Pannes observées / test" Height="30" Padding="8,0"/>
+                                <TextBox Grid.Column="4" Text="{Binding EtatDetail.GarantieOfferte}" ToolTip="Garantie (en mois)" Height="30" Padding="8,0"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,15,0,0">
                             <TextBlock Text="Description technique" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
                             <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" 
-                                     Height="100" TextWrapping="Wrap" AcceptsReturn="True" Padding="8" VerticalContentAlignment="Top"/>
+                                     Height="60" TextWrapping="Wrap" AcceptsReturn="True" Padding="8" VerticalContentAlignment="Top"/>
                         </StackPanel>
+
+                        <!-- Spécifications Dynamiques (EAV) -->
+                        <StackPanel Margin="0,15,0,0">
+                            <TextBlock Text="Spécifications techniques spécifiques (EAV)" Margin="0,0,0,6" Foreground="#475569" FontWeight="Medium"/>
+                            <DataGrid ItemsSource="{Binding ChampsSpecifiques}" AutoGenerateColumns="False" HeadersVisibility="Column" SelectionMode="Single" Height="150">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Champ" Binding="{Binding NomChamp}" IsReadOnly="True" Width="200"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding TypeDonnee}" IsReadOnly="True" Width="100"/>
+                                    <DataGridTextColumn Header="Valeur" Binding="{Binding Valeur, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- Image Gallery Section -->
+                <Border Background="White" CornerRadius="8" Padding="20" Margin="0,0,0,15"
+                        Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,15">
+                            <TextBlock Text="GALERIE D'IMAGES" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                            <Button Content="+ Ajouter des images" Command="{Binding UploadImagesCommand}" 
+                                    Style="{StaticResource ActionButton}" Background="#2563EB" Foreground="White" 
+                                    Padding="10,5" HorizontalAlignment="Right" Height="30"/>
+                        </DockPanel>
+
+                        <TextBlock Text="Seules les images JPG, PNG et WEBP sont acceptées. La première image sera la photo principale du catalogue." 
+                                   Foreground="#94A3B8" FontStyle="Italic" Margin="0,0,0,15" 
+                                   Visibility="{Binding Photos.Count, Converter={StaticResource InverseBool}}"/>
+
+                        <ItemsControl ItemsSource="{Binding Photos}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,15,15" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Background="White" Width="160">
+                                        <StackPanel>
+                                            <Image Source="{Binding FullUrl}" Height="120" Width="160" Stretch="UniformToFill" ClipToBounds="True"/>
+                                            
+                                            <!-- Controls -->
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
+                                                <Button Content="⭐ Principale" FontSize="10" ToolTip="Définir comme principale" 
+                                                        Command="{Binding DataContext.SetPrimaryImageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                        CommandParameter="{Binding Id}"
+                                                        Style="{StaticResource ActionButton}" Height="24" Margin="0,0,10,0"/>
+                                                
+                                                <Button Content="🗑️" ToolTip="Supprimer" 
+                                                        Command="{Binding DataContext.DeleteImageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                        CommandParameter="{Binding Id}"
+                                                        Style="{StaticResource ActionButton}" Height="24"/>
+                                            </StackPanel>
+                                            
+                                            <Border Background="#FEF3C7" Padding="5,2" Visibility="{Binding IsPrimary, Converter={StaticResource BoolToVis}}" 
+                                                    HorizontalAlignment="Center" Margin="0,0,0,10" CornerRadius="4">
+                                                <TextBlock Text="PRINCIPALE" FontSize="10" FontWeight="Bold" Foreground="#D97706"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </Border>
 
@@ -127,7 +214,8 @@
         </ScrollViewer>
 
         <!-- 3. Footer Buttons -->
-        <Border Grid.Row="2" Padding="0,20,0,0" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Padding="0,20,0,0" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
+                IsEnabled="{Binding IsSaving, Converter={StaticResource InverseBool}}">
             <DockPanel>
                 <Button Content="Annuler" Command="{Binding CancelCommand}" 
                         Background="Transparent" BorderBrush="#CBD5E1" Foreground="#475569"

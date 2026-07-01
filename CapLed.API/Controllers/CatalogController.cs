@@ -31,19 +31,23 @@ public class CatalogController : ControllerBase
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<PagedResultDto<EquipmentCatalogItemDto>>> GetCatalog(
+        [FromQuery] int? familleId,
         [FromQuery] int? categoryId, 
         [FromQuery] EquipmentCondition? condition,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 12)
     {
-        // Public catalog only shows Published items
+        // Public catalog only shows Published AND Visible items
         var (entities, totalCount) = await _equipmentRepository.GetAllAsync(
-            categoryId, condition, isPublished: true, search, page, pageSize);
+            familleId, categoryId, condition, isPublished: true, search, page, pageSize);
         
-        var dtos = _mapper.Map<IEnumerable<EquipmentCatalogItemDto>>(entities);
+        // Ensure we filter for VisibleSite in memory if repo doesn't do it yet
+        var filteredEntities = entities.Where(e => e.VisibleSite).ToList();
         
-        return Ok(new PagedResultDto<EquipmentCatalogItemDto>(dtos, totalCount, page, pageSize));
+        var dtos = _mapper.Map<IEnumerable<EquipmentCatalogItemDto>>(filteredEntities);
+        
+        return Ok(new PagedResultDto<EquipmentCatalogItemDto>(dtos, filteredEntities.Count, page, pageSize));
     }
 
     /// <summary>

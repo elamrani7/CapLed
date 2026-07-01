@@ -24,15 +24,23 @@ public partial class App : Application
 
     private void ConfigureServices(IServiceCollection services)
     {
-        // ── Services ────────────────────────────────────────────────────
-        services.AddSingleton(new HttpClient { BaseAddress = new Uri("http://localhost:5115/") });
+        services.AddSingleton(new HttpClient
+        {
+            BaseAddress = new Uri("https://partfinder-api-eisi2026-d0b6hucygcc4egae.francecentral-01.azurewebsites.net/")
+        });
+        services.AddSingleton<IConfirmationService, WpfConfirmationService>();
         
         services.AddSingleton<EquipmentService>();
         services.AddSingleton<CategoryService>();
+        services.AddSingleton<FamilleService>();
         services.AddSingleton<StockService>();
         services.AddSingleton<AlertService>();
         services.AddSingleton<UserService>();
         services.AddSingleton<AuthService>();
+        services.AddSingleton<StockDetailService>();
+        
+        services.AddSingleton<CrmApiClient>();
+        services.AddSingleton<DocumentApiClient>();
 
         // ── ViewModels ──────────────────────────────────────────────────
         services.AddSingleton<MainViewModel>();
@@ -44,6 +52,9 @@ public partial class App : Application
         services.AddTransient<AlertsViewModel>();
         services.AddTransient<UserViewModel>();
         services.AddTransient<LoginViewModel>();
+        
+        services.AddTransient<CapLed.Desktop.ViewModels.CRM.LeadsViewModel>();
+        services.AddTransient<CapLed.Desktop.ViewModels.CRM.DocumentsViewModel>();
 
         // Factory to solve circular dependency
         services.AddSingleton<Func<MainViewModel, LoginViewModel>>(provider => 

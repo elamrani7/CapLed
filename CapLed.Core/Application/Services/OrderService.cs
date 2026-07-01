@@ -1,0 +1,298 @@
+using AutoMapper;
+using StockManager.Core.Application.DTOs.Commercial;
+using StockManager.Core.Application.Interfaces.Repositories;
+using StockManager.Core.Application.Interfaces.Services;
+using StockManager.Core.Domain.Entities.Commercial;
+using StockManager.Core.Application.DTOs.Stock;
+
+namespace StockManager.Core.Application.Services;
+
+public class OrderService : IOrderService
+{
+    private readonly IBonCommandeRepository _bcRepo;
+    private readonly IBonLivraisonRepository _blRepo;
+    private readonly ILeadRepository _leadRepo;
+    private readonly IStockServiceV3 _stockService;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+    private readonly IEquipmentRepository _equipmentRepo;
+    private readonly ILotRepository _lotRepo;
+    private readonly INumeroSerieRepository _serieRepo;
+
+    public OrderService(
+        IBonCommandeRepository bcRepo,
+        IBonLivraisonRepository blRepo,
+        ILeadRepository leadRepo,
+        IStockServiceV3 stockService,
+        IUnitOfWork unitOfWork,
+        IMapper mapper,
+        IEquipmentRepository equipmentRepo,
+        ILotRepository lotRepo,
+        INumeroSerieRepository serieRepo)
+    {
+        _bcRepo = bcRepo;
+        _blRepo = blRepo;
+        _leadRepo = leadRepo;
+        _stockService = stockService;
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+        _equipmentRepo = equipmentRepo;
+        _lotRepo = lotRepo;
+        _serieRepo = serieRepo;
+    }
+
+    public async Task<BonCommandeReadDto> CreateBonCommandeAsync(CreateBonCommandeDto dto)
+    {
+        var bc = _mapper.Map<BonCommande>(dto);
+        bc.NumeroBC = await GenerateNumeroAsync("BC");
+        bc.Statut = "EN_ATTENTE";
+        
+        await _bcRepo.AddAsync(bc);
+        await _unitOfWork.SaveChangesAsync();
+        
+        return _mapper.Map<BonCommandeReadDto>(bc);
+    }
+
+    /// <summary>
+    /// Crée un Bon de Commande à partir d'un Lead ACCEPTE.
+    /// Règles métier :
+    ///   - Le Lead doit exister
+    ///   - Le Lead doit avoir le statut ACCEPTE
+    ///   - Un seul BC par Lead (relation 1:1)
+    /// </summary>
+    public async Task<BonCommandeReadDto> CreateBonCommandeFromLeadAsync(int leadId)
+    {
+        // 1. Charger le Lead avec ses lignes et son client
+        var lead = await _leadRepo.GetByIdAsync(leadId);
+        if (lead == null)
+            throw new InvalidOperationException("Lead introuvable.");
+
+        // 2. Vérifier le statut
+        if (lead.Statut != "ACCEPTE")
+            throw new InvalidOperationException($"Le Lead doit être au statut ACCEPTE pour générer un BC. Statut actuel : {lead.Statut}.");
+
+        // 3. Vérifier qu'aucun BC n'existe déjà pour ce Lead
+        var existingBc = await _bcRepo.GetByLeadIdAsync(leadId);
+        if (existingBc != null)
+            throw new InvalidOperationException($"Un Bon de Commande ({existingBc.NumeroBC}) existe déjà pour ce Lead.");
+
+        // 4. Construire le BC depuis les données du Lead
+        var bc = new BonCommande
+        {
+            NumeroBC = await GenerateNumeroAsync("BC"),
+            ClientId = lead.ClientId,
+            DateCommande = DateTime.UtcNow,
+            Statut = "EN_ATTENTE",
+            LeadId = lead.Id,
+            Commentaire = $"Généré depuis le devis {lead.NumeroDevis}",
+            Lignes = lead.Lignes.Select(ll => new LigneBC
+            {
+                ArticleId = ll.ArticleId,
+                QuantiteCommandee = ll.QuantiteDemandee,
+                PrixUnitaire = ll.Article?.PrixVente ?? 0m // Ensure we capture the price
+            }).ToList()
+        };
+
+        await _bcRepo.AddAsync(bc);
+        await _unitOfWork.SaveChangesAsync();
+
+        // 5. Recharger avec les navigations pour le DTO
+        var saved = await _bcRepo.GetByIdAsync(bc.Id);
+        var dto = _mapper.Map<BonCommandeReadDto>(saved);
+        dto.LeadId = lead.Id;
+        dto.NumeroDevis = lead.NumeroDevis;
+        return dto;
+    }
+
+    public async Task<BonLivraisonReadDto> CreateBonLivraisonAsync(CreateBonLivraisonDto dto)
+    {
+        if (dto.DepotId <= 0)
+            throw new Exception("Un Dépôt d'expédition est obligatoire pour générer un Bon de Livraison.");
+
+        var bl = _mapper.Map<BonLivraison>(dto);
+        bl.NumeroBL = await GenerateNumeroAsync("BL");
+        bl.Statut = "VALIDE";
+        
+        await _blRepo.AddAsync(bl);
+        
+        // RG : Chaque ligne du BL déclenche une sortie de stock du dépôt sélectionné
+        foreach (var ligne in bl.Lignes)
+        {
+            var movementDto = new CreateMouvementDto
+            {
+                ArticleId = ligne.ArticleId,
+                TypeMouvement = "SORTIE",
+                Quantite = ligne.QuantiteLivree,
+                DepotSourceId = dto.DepotId,
+                Remarks = $"Livraison {bl.NumeroBL}",
+                NumeroLot = ligne.LotId?.ToString(), // or pass lot info if needed
+                NumeroSeries = !string.IsNullOrEmpty(ligne.NumeroSerie) ? new List<string> { ligne.NumeroSerie } : new List<string>()
+            };
+            
+            // Si le stock est insuffisant, StockServiceV3 (via V2) lèvera une exception qui annulera la transaction globale
+            await _stockService.CreateMouvementAsync(movementDto, 1);
+        }
+        
+        await _unitOfWork.SaveChangesAsync();
+        
+        return _mapper.Map<BonLivraisonReadDto>(bl);
+    }
+
+    public async Task<BonLivraisonReadDto> CreateBonLivraisonFromBcAsync(int bcId, int depotId)
+    {
+        if (depotId <= 0)
+            throw new InvalidOperationException("Un Dépôt d'expédition est obligatoire pour générer un Bon de Livraison.");
+
+        var bc = await _bcRepo.GetByIdAsync(bcId);
+        if (bc == null)
+            throw new InvalidOperationException("Bon de Commande introuvable.");
+
+        if (bc.Statut != "EN_ATTENTE" && bc.Statut != "CREE")
+            throw new InvalidOperationException($"Le Bon de Commande ne peut pas être livré (Statut: {bc.Statut}).");
+
+        // Construction du BL
+        var bl = new BonLivraison
+        {
+            NumeroBL = await GenerateNumeroAsync("BL"),
+            BonCommandeId = bc.Id,
+            ClientId = bc.ClientId,
+            DateLivraison = DateTime.UtcNow,
+            Statut = "VALIDE",
+            DepotId = depotId,
+            AdresseLivraison = bc.Client?.Adresse
+        };
+
+        // Transfert des lignes
+        foreach (var lbc in bc.Lignes)
+        {
+            bl.Lignes.Add(new LigneBL
+            {
+                ArticleId = lbc.ArticleId,
+                QuantiteLivree = lbc.QuantiteCommandee
+            });
+        }
+
+        await _blRepo.AddAsync(bl);
+
+        // Déclenchement des sorties de stock
+        foreach (var ligne in bl.Lignes)
+        {
+            var movementDto = new CreateMouvementDto
+            {
+                ArticleId = ligne.ArticleId,
+                TypeMouvement = "SORTIE",
+                Quantite = ligne.QuantiteLivree,
+                DepotSourceId = depotId,
+                Remarks = $"Livraison {bl.NumeroBL} (BC: {bc.NumeroBC})"
+            };
+            
+            var article = await _equipmentRepo.GetByIdAsync(ligne.ArticleId);
+            if (article != null && article.Category?.TypeGestionStock == "LOT")
+            {
+                var lots = await _lotRepo.GetByArticleAsync(ligne.ArticleId);
+                var validLot = lots.FirstOrDefault(l => l.DepotId == depotId && l.Quantite >= ligne.QuantiteLivree);
+                if (validLot == null)
+                    throw new InvalidOperationException($"Stock insuffisant ou aucun lot contenant la quantité requise ({ligne.QuantiteLivree}) pour l'article '{article.Name}' dans ce dépôt.");
+                
+                movementDto.NumeroLot = validLot.NumeroLot;
+                ligne.LotId = validLot.Id;
+            }
+            else if (article != null && article.Category?.TypeGestionStock == "SERIALISE")
+            {
+                var series = await _serieRepo.GetByArticleAsync(ligne.ArticleId);
+                var availableSerials = series
+                    .Where(s => s.DepotId == depotId && s.Statut == StockManager.Core.Domain.Enums.SerialStatus.DISPONIBLE)
+                    .Take(ligne.QuantiteLivree)
+                    .ToList();
+                    
+                if (availableSerials.Count < ligne.QuantiteLivree)
+                    throw new InvalidOperationException($"Pas assez de numéros de série disponibles pour l'article '{article.Name}' dans ce dépôt.");
+                
+                movementDto.NumeroSeries = availableSerials.Select(s => s.NumeroSerieLabel).ToList();
+            }
+
+            // Lève une exception si stock insuffisant, annulant toute la transaction
+            await _stockService.CreateMouvementAsync(movementDto, 1);
+        }
+
+        // Mettre à jour le BC
+        bc.Statut = "LIVRE";
+        
+        await _unitOfWork.SaveChangesAsync();
+
+        var saved = await _blRepo.GetByIdAsync(bl.Id);
+        return _mapper.Map<BonLivraisonReadDto>(saved);
+    }
+
+    public async Task<BonCommandeReadDto?> GetBonCommandeAsync(int id)
+    {
+        var bc = await _bcRepo.GetByIdAsync(id);
+        if (bc == null) return null;
+        var dto = _mapper.Map<BonCommandeReadDto>(bc);
+        dto.LeadId = bc.LeadId;
+        dto.NumeroDevis = bc.Lead?.NumeroDevis;
+        return dto;
+    }
+
+    public async Task<BonLivraisonReadDto?> GetBonLivraisonAsync(int id)
+    {
+        var bl = await _blRepo.GetByIdAsync(id);
+        return _mapper.Map<BonLivraisonReadDto>(bl);
+    }
+
+    public async Task<List<BonCommandeReadDto>> GetAllBonsCommandeAsync()
+    {
+        var bcs = await _bcRepo.GetAllAsync();
+        return bcs.Select(bc =>
+        {
+            var dto = _mapper.Map<BonCommandeReadDto>(bc);
+            dto.LeadId = bc.LeadId;
+            dto.NumeroDevis = bc.Lead?.NumeroDevis;
+            return dto;
+        }).ToList();
+    }
+
+    public async Task<List<BonLivraisonReadDto>> GetAllBonsLivraisonAsync()
+    {
+        var bls = await _blRepo.GetAllAsync();
+        return bls.Select(bl => _mapper.Map<BonLivraisonReadDto>(bl)).ToList();
+    }
+
+    public async Task DeleteBonCommandeAsync(int id)
+    {
+        var bc = await _bcRepo.GetByIdAsync(id);
+        if (bc == null)
+            throw new InvalidOperationException("Bon de Commande introuvable.");
+
+        if (bc.Statut != "EN_ATTENTE" && bc.Statut != "CREE")
+            throw new InvalidOperationException($"Impossible de supprimer un Bon de Commande au statut '{bc.Statut}'. Seuls les BC en attente peuvent être supprimés.");
+
+        if (bc.BonsLivraison != null && bc.BonsLivraison.Any())
+            throw new InvalidOperationException("Impossible de supprimer ce Bon de Commande car des Bons de Livraison y sont déjà rattachés.");
+
+        await _bcRepo.DeleteAsync(bc);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    private async Task<string> GenerateNumeroAsync(string type)
+    {
+        string year = DateTime.UtcNow.Year.ToString();
+        string prefix = $"{type}-{year}-";
+        
+        string lastNum = type == "BC" 
+            ? await _bcRepo.GetLastNumeroAsync(prefix)
+            : await _blRepo.GetLastNumeroAsync(prefix);
+            
+        int nextId = 1;
+        if (!string.IsNullOrEmpty(lastNum))
+        {
+            string suffix = lastNum.Substring(prefix.Length);
+            if (int.TryParse(suffix, out int lastId))
+            {
+                nextId = lastId + 1;
+            }
+        }
+        
+        return $"{prefix}{nextId:D4}";
+    }
+}

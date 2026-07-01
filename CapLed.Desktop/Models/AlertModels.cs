@@ -1,4 +1,5 @@
 using System;
+using StockManager.Core.Domain.Enums;
 
 namespace CapLed.Desktop.Models;
 
@@ -11,10 +12,7 @@ public class AlertModel
     public int Threshold { get; set; }
     public DateTime CreatedAt { get; set; }
     public string Status { get; set; } = "Active";
-
-    // UI Helper Properties
-    public bool IsCritical => CurrentQuantity < (Threshold / 2.0);
-    public bool IsWarning => !IsCritical && CurrentQuantity <= Threshold;
+    public StockAlertLevel AlertLevel { get; set; }
 }
 
 public class AlertUpdateModel

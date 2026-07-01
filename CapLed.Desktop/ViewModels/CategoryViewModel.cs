@@ -9,9 +9,13 @@ namespace CapLed.Desktop.ViewModels;
 public class CategoryViewModel : BaseViewModel
 {
     private readonly CategoryService _categoryService;
+    private readonly FamilleService _familleService;
+    private readonly IConfirmationService _confirmationService;
 
     // ─── Collections ─────────────────────────────────────────────────────────
     public ObservableCollection<CategoryModel> Categories { get; } = new();
+    public ObservableCollection<FamilleModel> Familles { get; } = new();
+    public ObservableCollection<string> GestionStockTypes { get; } = new() { "QUANTITE", "LOT", "SERIALISE" };
 
     // ─── Form Selection & Edit State ──────────────────────────────────────────
     private CategoryModel? _selectedCategory;
@@ -35,6 +39,20 @@ public class CategoryViewModel : BaseViewModel
         set => SetProperty(ref _description, value);
     }
 
+    private int? _selectedFamilleId;
+    public int? SelectedFamilleId
+    {
+        get => _selectedFamilleId;
+        set => SetProperty(ref _selectedFamilleId, value);
+    }
+
+    private string _typeGestionStock = "QUANTITE";
+    public string TypeGestionStock
+    {
+        get => _typeGestionStock;
+        set => SetProperty(ref _typeGestionStock, value);
+    }
+
     private bool _isEditMode;
     public bool IsEditMode
     {
@@ -50,14 +68,22 @@ public class CategoryViewModel : BaseViewModel
 
     private int? _editingCategoryId;
 
-    private bool _isSaving;
-    public bool IsSaving
+    public string FormTitle => IsEditMode ? "Modifier la Catégorie" : "Nouvelle Catégorie";
+
+    // ─── Quick-Add Famille panel ──────────────────────────────────────────────
+    private bool _showAddFamillePanel;
+    public bool ShowAddFamillePanel
     {
-        get => _isSaving;
-        set => SetProperty(ref _isSaving, value);
+        get => _showAddFamillePanel;
+        set => SetProperty(ref _showAddFamillePanel, value);
     }
 
-    public string FormTitle => IsEditMode ? "Modifier la Catégorie" : "Nouvelle Catégorie";
+    private string _nouvelleFamilleLibelle = string.Empty;
+    public string NouvelleFamilleLibelle
+    {
+        get => _nouvelleFamilleLibelle;
+        set => SetProperty(ref _nouvelleFamilleLibelle, value);
+    }
 
     // ─── Commands ────────────────────────────────────────────────────────────
     public ICommand RefreshCommand { get; }
@@ -65,28 +91,38 @@ public class CategoryViewModel : BaseViewModel
     public ICommand EditCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand DeleteCommand { get; }
+    public ICommand DeleteCategoryCommand { get; }   // called from DataGrid row
     public ICommand ClearFormCommand { get; }
+    public ICommand ToggleAddFamilleCommand { get; }
+    public ICommand SaveNewFamilleCommand { get; }
 
-    public CategoryViewModel(CategoryService categoryService)
+    public CategoryViewModel(CategoryService categoryService, FamilleService familleService, IConfirmationService confirmationService)
     {
         _categoryService = categoryService;
+        _familleService = familleService;
+        _confirmationService = confirmationService;
 
-        RefreshCommand = new AsyncRelayCommand(LoadCategoriesAsync);
-        AddCommand = new RelayCommand(PrepareForAdd);
-        EditCommand = new RelayCommand(PrepareForEdit, () => SelectedCategory != null);
-        SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
-        DeleteCommand = new AsyncRelayCommand(DeleteAsync, () => SelectedCategory != null);
-        ClearFormCommand = new RelayCommand(ClearForm);
+        RefreshCommand       = new AsyncRelayCommand(LoadDataAsync);
+        AddCommand           = new RelayCommand(PrepareForAdd);
+        EditCommand          = new RelayCommand(PrepareForEdit, () => SelectedCategory != null);
+        SaveCommand          = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
+        DeleteCommand        = new AsyncRelayCommand(DeleteAsync, () => SelectedCategory != null);
+        DeleteCategoryCommand = new AsyncRelayCommand(async p => await DeleteCategoryByRowAsync(p as CategoryModel));
+        ClearFormCommand     = new RelayCommand(ClearForm);
+        ToggleAddFamilleCommand = new RelayCommand(() => { ShowAddFamillePanel = !ShowAddFamillePanel; NouvelleFamilleLibelle = string.Empty; });
+        SaveNewFamilleCommand   = new AsyncRelayCommand(SaveNewFamilleAsync, () => !IsSaving);
     }
 
-    public async Task LoadCategoriesAsync()
+    public async Task LoadDataAsync()
     {
-        if (IsLoading) return;
-        IsLoading = true;
-        ErrorMessage = null;
+        BeginOperation();
 
         try
         {
+            var familles = await _familleService.GetAllAsync();
+            Familles.Clear();
+            foreach (var fam in familles) Familles.Add(fam);
+
             var result = await _categoryService.GetAllAsync();
             Categories.Clear();
             foreach (var cat in result)
@@ -100,7 +136,7 @@ public class CategoryViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -117,6 +153,9 @@ public class CategoryViewModel : BaseViewModel
 
         Label = SelectedCategory.Label;
         Description = SelectedCategory.Description;
+        SelectedFamilleId = SelectedCategory.FamilleId;
+        TypeGestionStock = !string.IsNullOrEmpty(SelectedCategory.TypeGestionStock) ? SelectedCategory.TypeGestionStock : "QUANTITE";
+        
         IsEditMode = true;
         _editingCategoryId = SelectedCategory.Id;
         SuccessMessage = null;
@@ -131,16 +170,16 @@ public class CategoryViewModel : BaseViewModel
             return;
         }
 
-        IsSaving = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        BeginSave();
 
         try
         {
             var model = new CategoryModel
             {
                 Label = Label,
-                Description = Description
+                Description = Description,
+                FamilleId = SelectedFamilleId,
+                TypeGestionStock = TypeGestionStock
             };
 
             bool success;
@@ -158,7 +197,7 @@ public class CategoryViewModel : BaseViewModel
             {
                 SuccessMessage = IsEditMode ? "Catégorie mise à jour." : "Catégorie créée.";
                 if (!IsEditMode) ClearForm();
-                await LoadCategoriesAsync();
+                await LoadDataAsync();
             }
             else
             {
@@ -171,49 +210,84 @@ public class CategoryViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
     }
 
     private async Task DeleteAsync()
     {
         if (SelectedCategory == null) return;
+        await DeleteCategoryByRowAsync(SelectedCategory);
+    }
 
-        // Simple confirmation placeholder
-        // In a real app, use a DialogService or MessageBox from the View
-        
-        IsSaving = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+    private async Task DeleteCategoryByRowAsync(CategoryModel? cat)
+    {
+        if (cat == null) return;
 
+        if (!_confirmationService.Confirm("Suppression", $"Supprimer la catégorie '{cat.Label}' ?"))
+            return;
+
+        BeginSave();
         try
         {
-            bool success = await _categoryService.DeleteAsync(SelectedCategory.Id);
+            bool success = await _categoryService.DeleteAsync(cat.Id);
             if (success)
             {
                 SuccessMessage = "Catégorie supprimée.";
-                ClearForm();
-                await LoadCategoriesAsync();
+                if (SelectedCategory?.Id == cat.Id) ClearForm();
+                await LoadDataAsync();
             }
             else
             {
-                ErrorMessage = "Impossible de supprimer la catégorie (elle est probablement liée à des équipements).";
+                ErrorMessage = "Impossible de supprimer (catégorie liée à des équipements).";
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) { ErrorMessage = "Erreur suppression : " + ex.Message; }
+        finally { EndSave(); }
+    }
+
+    private async Task SaveNewFamilleAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NouvelleFamilleLibelle))
         {
-            ErrorMessage = "Erreur lors de la suppression : " + ex.Message;
+            ErrorMessage = "Le libellé de la famille est obligatoire.";
+            return;
         }
-        finally
+
+        BeginSave();
+        try
         {
-            IsSaving = false;
+            var newFamille = new FamilleModel
+            {
+                Code    = NouvelleFamilleLibelle.ToUpperInvariant().Replace(" ", "-").Substring(0, Math.Min(20, NouvelleFamilleLibelle.Length)),
+                Libelle = NouvelleFamilleLibelle
+            };
+            bool ok = await _familleService.CreateAsync(newFamille);
+            if (ok)
+            {
+                SuccessMessage = $"Famille '{NouvelleFamilleLibelle}' créée.";
+                ShowAddFamillePanel = false;
+                NouvelleFamilleLibelle = string.Empty;
+                // Reload familles and auto-select the new one
+                var familles = await _familleService.GetAllAsync();
+                Familles.Clear();
+                foreach (var f in familles) Familles.Add(f);
+                // Select the newly created family
+                var created = Familles.LastOrDefault(f => f.Libelle == newFamille.Libelle);
+                if (created != null) SelectedFamilleId = created.Id;
+            }
+            else { ErrorMessage = "Impossible de créer la famille."; }
         }
+        catch (Exception ex) { ErrorMessage = "Erreur : " + ex.Message; }
+        finally { EndSave(); }
     }
 
     private void ClearForm()
     {
         Label = string.Empty;
         Description = null;
+        SelectedFamilleId = null;
+        TypeGestionStock = "QUANTITE";
         ErrorMessage = null;
         SuccessMessage = null;
     }

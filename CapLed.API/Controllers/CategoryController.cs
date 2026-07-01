@@ -22,6 +22,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll()
     {
         var entities = await _categoryRepository.GetAllAsync();

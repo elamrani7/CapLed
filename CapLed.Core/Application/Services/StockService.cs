@@ -2,24 +2,30 @@ using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Application.Interfaces.Services;
 using StockManager.Core.Domain.Entities;
 using StockManager.Core.Domain.Enums;
+using StockManager.Core.Domain.Exceptions;
 
 namespace StockManager.Core.Application.Services;
 
 public class StockService : IStockService
 {
     private readonly IEquipmentRepository _equipmentRepository;
+    private readonly IStockQuantiteRepository _stockQuantiteRepository;
     private readonly IStockMovementRepository _movementRepository;
 
-    public StockService(IEquipmentRepository equipmentRepository, IStockMovementRepository movementRepository)
+    public StockService(IEquipmentRepository equipmentRepository, 
+                        IStockMovementRepository movementRepository,
+                        IStockQuantiteRepository stockQuantiteRepository)
     {
         _equipmentRepository = equipmentRepository;
         _movementRepository = movementRepository;
+        _stockQuantiteRepository = stockQuantiteRepository;
     }
 
-    public async Task<StockMovement> RecordEntryAsync(int equipmentId, int quantity, int userId, string? remarks = null)
+    public async Task<StockMovement> RecordEntryAsync(int equipmentId, int quantity, int userId, int depotId, string? remarks = null)
     {
         var equipment = await _equipmentRepository.GetByIdAsync(equipmentId);
-        if (equipment == null) throw new Exception("Equipment not found");
+        if (equipment == null)
+            throw new NotFoundException("ARTICLE_NOT_FOUND", $"L'article avec l'identifiant {equipmentId} est introuvable.");
 
         // 1. Create the movement record
         var movement = new StockMovement
@@ -27,28 +33,53 @@ public class StockService : IStockService
             EquipmentId = equipmentId,
             UserId = userId,
             Type = MovementType.ENTRY,
+            TypeMouvement = "ENTREE",
             Quantity = quantity,
+            DepotDestinationId = depotId,
             Remarks = remarks,
             CreatedAt = DateTime.UtcNow
         };
 
-        // 2. Update equipment quantity
+        // 2. Update equipment quantity (global)
         equipment.Quantity += quantity;
 
-        // 3. Save changes (Repositories handle SaveChanges internaly in this simple design)
+        // 3. Update stock per depot
+        var sq = await _stockQuantiteRepository.GetByArticleAndDepotAsync(equipmentId, depotId);
+        if (sq == null)
+        {
+            await _stockQuantiteRepository.AddAsync(new StockManager.Core.Domain.Entities.Stock.StockQuantite
+            {
+                ArticleId = equipmentId,
+                DepotId = depotId,
+                Quantite = quantity,
+                LastUpdatedAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            sq.Quantite += quantity;
+            sq.LastUpdatedAt = DateTime.UtcNow;
+            await _stockQuantiteRepository.UpdateAsync(sq);
+        }
+
+        // 4. Save changes
         await _movementRepository.AddAsync(movement);
         await _equipmentRepository.UpdateAsync(equipment);
 
         return movement;
     }
 
-    public async Task<StockMovement> RecordExitAsync(int equipmentId, int quantity, int userId, string? remarks = null)
+    public async Task<StockMovement> RecordExitAsync(int equipmentId, int quantity, int userId, int depotId, string? remarks = null)
     {
         var equipment = await _equipmentRepository.GetByIdAsync(equipmentId);
-        if (equipment == null) throw new Exception("Equipment not found");
+        if (equipment == null)
+            throw new NotFoundException("ARTICLE_NOT_FOUND", $"L'article avec l'identifiant {equipmentId} est introuvable.");
 
-        if (equipment.Quantity < quantity)
-            throw new Exception("Insufficient stock available for this exit.");
+        // Check stock per depot
+        var sq = await _stockQuantiteRepository.GetByArticleAndDepotAsync(equipmentId, depotId);
+        if (sq == null || sq.Quantite < quantity)
+            throw new DomainException("STOCK_INSUFFICIENT",
+                $"Stock insuffisant dans le dépôt sélectionné. Disponible : {sq?.Quantite ?? 0}, demandé : {quantity}.");
 
         // 1. Create the movement record
         var movement = new StockMovement
@@ -56,15 +87,22 @@ public class StockService : IStockService
             EquipmentId = equipmentId,
             UserId = userId,
             Type = MovementType.EXIT,
+            TypeMouvement = "SORTIE",
             Quantity = quantity,
+            DepotSourceId = depotId,
             Remarks = remarks,
             CreatedAt = DateTime.UtcNow
         };
 
-        // 2. Update equipment quantity
+        // 2. Update equipment quantity (global)
         equipment.Quantity -= quantity;
 
-        // 3. Save changes
+        // 3. Update stock per depot
+        sq.Quantite -= quantity;
+        sq.LastUpdatedAt = DateTime.UtcNow;
+        await _stockQuantiteRepository.UpdateAsync(sq);
+
+        // 4. Save changes
         await _movementRepository.AddAsync(movement);
         await _equipmentRepository.UpdateAsync(equipment);
 
@@ -75,13 +113,106 @@ public class StockService : IStockService
     {
         // For alerts, we might want all of them, so we set a large page size
         var (items, _) = await _equipmentRepository.GetAllAsync(pageSize: 1000);
-        return items.Where(e => e.Quantity <= e.MinThreshold);
+        
+        // New business rule: alerts start at 5 and below
+        return items.Where(e => e.Quantity <= 5);
     }
 
     public async Task<int> GetStockLevelAsync(int equipmentId)
     {
         var equipment = await _equipmentRepository.GetByIdAsync(equipmentId);
         return equipment?.Quantity ?? 0;
+    }
+
+    public async Task<StockMovement?> GetMovementByIdAsync(int id)
+    {
+        return await _movementRepository.GetByIdAsync(id);
+    }
+
+    /// <summary>
+    /// Updates an existing movement with a correct 4-step stock recalculation:
+    /// 1. Load the OLD movement.
+    /// 2. REVERT the OLD movement's impact on the OLD equipment's stock.
+    /// 3. APPLY the NEW movement's impact on the (possibly different) NEW equipment's stock.
+    /// 4. Validate no stock goes below zero, then save.
+    /// </summary>
+    public async Task UpdateMovementAsync(int id, int newEquipmentId, MovementType newType, int newQuantity, string? newRemarks)
+    {
+        // Step 1 — Load OLD movement + its equipment
+        var oldMovement = await _movementRepository.GetByIdAsync(id);
+        if (oldMovement == null)
+            throw new NotFoundException("MOUVEMENT_NOT_FOUND", $"Le mouvement {id} est introuvable.");
+
+        var oldEquipment = await _equipmentRepository.GetByIdAsync(oldMovement.EquipmentId);
+        if (oldEquipment == null)
+            throw new NotFoundException("ARTICLE_NOT_FOUND", "L'article d'origine du mouvement est introuvable.");
+
+        // Step 2 — REVERT OLD movement's stock impact
+        if (oldMovement.Type == MovementType.ENTRY)
+            oldEquipment.Quantity -= oldMovement.Quantity;  // undo the entry
+        else
+            oldEquipment.Quantity += oldMovement.Quantity;  // undo the exit
+
+        // Safety check after revert (cannot be negative — data integrity)
+        if (oldEquipment.Quantity < 0)
+            throw new DomainException("STOCK_INCOHERENCE", "Incohérence de stock détectée : l'annulation rendrait le stock négatif.");
+
+        // Step 3 — APPLY NEW movement's stock impact (may be on a different equipment)
+        bool equipmentChanged = newEquipmentId != oldMovement.EquipmentId;
+        Equipment newEquipment;
+
+        if (equipmentChanged)
+        {
+            newEquipment = await _equipmentRepository.GetByIdAsync(newEquipmentId)
+                           ?? throw new NotFoundException("ARTICLE_NOT_FOUND", "Le nouvel article sélectionné est introuvable.");
+        }
+        else
+        {
+            newEquipment = oldEquipment; // same object, already reverted
+        }
+
+        if (newType == MovementType.ENTRY)
+            newEquipment.Quantity += newQuantity;
+        else
+        {
+            newEquipment.Quantity -= newQuantity;
+            if (newEquipment.Quantity < 0)
+                throw new DomainException("STOCK_INSUFFICIENT",
+                    $"Stock insuffisant sur '{newEquipment.Name}'. Disponible : {newEquipment.Quantity + newQuantity}, demandé : {newQuantity}.");
+        }
+
+        // Step 4 — Persist all changes
+        oldMovement.EquipmentId = newEquipmentId;
+        oldMovement.Type        = newType;
+        oldMovement.Quantity    = newQuantity;
+        oldMovement.Remarks     = newRemarks;
+
+        await _movementRepository.UpdateAsync(oldMovement);
+        await _equipmentRepository.UpdateAsync(oldEquipment);
+
+        if (equipmentChanged)
+            await _equipmentRepository.UpdateAsync(newEquipment);
+    }
+
+    public async Task DeleteMovementAsync(int id)
+    {
+        var movement = await _movementRepository.GetByIdAsync(id);
+        if (movement == null)
+            throw new NotFoundException("MOUVEMENT_NOT_FOUND", $"Le mouvement {id} est introuvable.");
+
+        var equipment = await _equipmentRepository.GetByIdAsync(movement.EquipmentId);
+        if (equipment != null)
+        {
+            // Reverse stock change
+            if (movement.Type == MovementType.ENTRY)
+                equipment.Quantity -= movement.Quantity;
+            else
+                equipment.Quantity += movement.Quantity;
+
+            await _equipmentRepository.UpdateAsync(equipment);
+        }
+
+        await _movementRepository.DeleteAsync(id);
     }
 }
 

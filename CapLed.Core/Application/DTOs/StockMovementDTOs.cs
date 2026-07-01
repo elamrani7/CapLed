@@ -10,15 +10,20 @@ public class StockMovementReadDto
     public string EquipmentName { get; set; } = string.Empty;
     public int Quantity { get; set; }
     public MovementType Type { get; set; }
+    public string DepotNom { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string? Comment { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string? TraceabiliteInfo { get; set; }
 }
 
 public class StockMovementCreateDto
 {
     [Required]
     public int EquipmentId { get; set; }
+
+    [Required]
+    public int DepotId { get; set; }
 
     [Required]
     [Range(1, int.MaxValue)]

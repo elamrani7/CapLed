@@ -13,5 +13,8 @@ public interface IStockMovementRepository
         DateTime? dateTo = null,
         int page = 1,
         int pageSize = 10);
+    Task<StockMovement?> GetByIdAsync(int id);
+    Task UpdateAsync(StockMovement movement);
+    Task DeleteAsync(int id);
 }
 

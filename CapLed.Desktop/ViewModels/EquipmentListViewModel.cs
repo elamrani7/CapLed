@@ -10,10 +10,14 @@ public class EquipmentListViewModel : BaseViewModel
 {
     private readonly EquipmentService _equipmentService;
     private readonly CategoryService _categoryService;
+    private readonly FamilleService _familleService;
+    private readonly IConfirmationService _confirmationService;
+    private readonly StockDetailService _stockDetailService;
 
     // ─── Collections ─────────────────────────────────────────────────────────
     public ObservableCollection<EquipmentListItemModel> EquipmentItems { get; } = new();
     public ObservableCollection<CategoryModel> Categories { get; } = new();
+    public ObservableCollection<FamilleModel> Familles { get; } = new();
 
     // ─── Selection & Filters ──────────────────────────────────────────────────
     private EquipmentListItemModel? _selectedEquipment;
@@ -28,6 +32,21 @@ public class EquipmentListViewModel : BaseViewModel
     {
         get => _searchText;
         set => SetProperty(ref _searchText, value);
+    }
+
+    private FamilleModel? _selectedFamille;
+    public FamilleModel? SelectedFamille
+    {
+        get => _selectedFamille;
+        set
+        {
+            if (SetProperty(ref _selectedFamille, value))
+            {
+                // Optionally clear category when famille changes
+                SelectedCategory = null;
+                // Auto-refresh could be triggering here, but we bind 'RefreshCommand' to the combo box usually, or just let users click button
+            }
+        }
     }
 
     private CategoryModel? _selectedCategory;
@@ -84,33 +103,63 @@ public class EquipmentListViewModel : BaseViewModel
     public ICommand DeleteEquipmentCommand { get; }
     public ICommand PreviousPageCommand { get; }
     public ICommand NextPageCommand { get; }
+    public ICommand ViewStockDetailCommand { get; }
+
+    // ─── Stock Detail Panel ───────────────────────────────────────────────────
+    public StockDetailViewModel StockDetail { get; }
 
     // ─── Navigation Support ───────────────────────────────────────────────────
     public Func<int?, Task>? NavigateToDetailRequested { get; set; }
 
-    public EquipmentListViewModel(EquipmentService equipmentService, CategoryService categoryService)
+    public EquipmentListViewModel(EquipmentService equipmentService, CategoryService categoryService, FamilleService familleService, IConfirmationService confirmationService, StockDetailService stockDetailService)
     {
-        _equipmentService = equipmentService;
-        _categoryService = categoryService;
+        _equipmentService    = equipmentService;
+        _categoryService     = categoryService;
+        _familleService      = familleService;
+        _confirmationService = confirmationService;
+        _stockDetailService  = stockDetailService;
 
-        _selectedCondition = ConditionOptions[0]; // "Tous"
+        StockDetail = new StockDetailViewModel(stockDetailService);
 
-        RefreshCommand = new AsyncRelayCommand(async () => { Page = 1; await LoadEquipmentAsync(); });
-        SearchCommand = new AsyncRelayCommand(async () => { Page = 1; await LoadEquipmentAsync(); });
-        ClearFiltersCommand = new AsyncRelayCommand(ClearFiltersAsync);
-        
-        AddEquipmentCommand = new RelayCommand(AddEquipment);
-        EditEquipmentCommand = new RelayCommand(EditEquipment, () => SelectedEquipment != null);
-        DeleteEquipmentCommand = new AsyncRelayCommand(DeleteEquipmentAsync, () => SelectedEquipment != null);
+        _selectedCondition = ConditionOptions[0];
+
+        RefreshCommand          = new AsyncRelayCommand(async () => { Page = 1; await LoadEquipmentAsync(); });
+        SearchCommand           = new AsyncRelayCommand(async () => { Page = 1; await LoadEquipmentAsync(); });
+        ClearFiltersCommand     = new AsyncRelayCommand(ClearFiltersAsync);
+        AddEquipmentCommand     = new RelayCommand(AddEquipment);
+        EditEquipmentCommand    = new RelayCommand(EditEquipment, () => SelectedEquipment != null);
+        DeleteEquipmentCommand  = new AsyncRelayCommand(DeleteEquipmentAsync, () => SelectedEquipment != null);
+        ViewStockDetailCommand  = new AsyncRelayCommand(param => {
+            if (param is EquipmentListItemModel item) return StockDetail.LoadAsync(item.Id);
+            return Task.CompletedTask;
+        });
 
         PreviousPageCommand = new AsyncRelayCommand(async () => { if (Page > 1) { Page--; await LoadEquipmentAsync(); } }, () => Page > 1);
-        NextPageCommand = new AsyncRelayCommand(async () => { if (Page < TotalPages) { Page++; await LoadEquipmentAsync(); } }, () => Page < TotalPages);
+        NextPageCommand     = new AsyncRelayCommand(async () => { if (Page < TotalPages) { Page++; await LoadEquipmentAsync(); } }, () => Page < TotalPages);
     }
 
     public async Task InitializeAsync()
     {
+        await LoadFamillesAsync();
         await LoadCategoriesAsync();
         await LoadEquipmentAsync();
+    }
+
+    private async Task LoadFamillesAsync()
+    {
+        try
+        {
+            var fams = await _familleService.GetAllAsync();
+            Familles.Clear();
+            if (fams != null)
+            {
+                foreach (var f in fams) Familles.Add(f);
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Impossible de charger les familles : " + ex.Message;
+        }
     }
 
     private async Task LoadCategoriesAsync()
@@ -129,15 +178,14 @@ public class EquipmentListViewModel : BaseViewModel
 
     private async Task LoadEquipmentAsync()
     {
-        if (IsLoading) return;
-        IsLoading = true;
-        ErrorMessage = null;
+        BeginOperation();
 
         try
         {
             string? conditionParam = SelectedCondition == "Tous" ? null : SelectedCondition;
             
             var result = await _equipmentService.GetAllAsync(
+                familleId: SelectedFamille?.Id,
                 categoryId: SelectedCategory?.Id,
                 condition: conditionParam,
                 search: SearchText,
@@ -160,13 +208,14 @@ public class EquipmentListViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
     private async Task ClearFiltersAsync()
     {
         SearchText = null;
+        SelectedFamille = null;
         SelectedCategory = null;
         SelectedCondition = ConditionOptions[0];
         Page = 1;
@@ -188,12 +237,12 @@ public class EquipmentListViewModel : BaseViewModel
     {
         if (SelectedEquipment == null) return;
 
-        // Simplified confirmation (In production, use a DialogService)
-        // if (MessageBox.Show("Supprimer cet équipement ?", "Confirmation", MessageBoxButton.YesNo) == MessageBoxResult.No) return;
+        if (!_confirmationService.Confirm("Suppression", $"Voulez-vous vraiment supprimer l'équipement '{SelectedEquipment.Name}' ?"))
+            return;
 
+        BeginSave();
         try
         {
-            IsLoading = true;
             bool success = await _equipmentService.DeleteAsync(SelectedEquipment.Id);
             if (success)
             {
@@ -207,7 +256,7 @@ public class EquipmentListViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndSave();
         }
     }
 }

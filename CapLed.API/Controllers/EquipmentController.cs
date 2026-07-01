@@ -4,6 +4,7 @@ using StockManager.Core.Application.DTOs;
 using StockManager.Core.Application.Interfaces.Repositories;
 using StockManager.Core.Domain.Entities;
 using StockManager.Core.Domain.Enums;
+using StockManager.API.Infrastructure;
 
 using Microsoft.AspNetCore.Authorization;
 
@@ -29,6 +30,7 @@ public class EquipmentController : ControllerBase
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<PagedResultDto<EquipmentListItemDto>>> GetAll(
+        [FromQuery] int? familleId,
         [FromQuery] int? categoryId, 
         [FromQuery] EquipmentCondition? condition,
         [FromQuery] string? search,
@@ -36,7 +38,7 @@ public class EquipmentController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var (entities, totalCount) = await _equipmentRepository.GetAllAsync(
-            categoryId, condition, isPublished: null, search, page, pageSize);
+            familleId, categoryId, condition, isPublished: null, search, page, pageSize);
         
         var dtos = _mapper.Map<IEnumerable<EquipmentListItemDto>>(entities);
         
@@ -60,7 +62,7 @@ public class EquipmentController : ControllerBase
     /// Create a new equipment item.
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<EquipmentReadDto>> Create(EquipmentCreateDto createDto)
+    public async Task<ActionResult<EquipmentReadDto>> Create([FromBody] EquipmentCreateDto createDto)
     {
         var entity = _mapper.Map<Equipment>(createDto);
         entity.CreatedAt = DateTime.UtcNow;
@@ -75,7 +77,7 @@ public class EquipmentController : ControllerBase
     /// Update an existing equipment item.
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, EquipmentUpdateDto updateDto)
+    public async Task<IActionResult> Update(int id, [FromBody] EquipmentUpdateDto updateDto)
     {
         var existing = await _equipmentRepository.GetByIdAsync(id);
         if (existing == null) return NotFound();
@@ -97,5 +99,101 @@ public class EquipmentController : ControllerBase
 
         await _equipmentRepository.DeleteAsync(id);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Upload images for an equipment item.
+    /// </summary>
+    [HttpPost("{id}/images")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadImages(int id, [FromForm] IFormFileCollection files)
+    {
+        var existing = await _equipmentRepository.GetByIdAsync(id);
+        if (existing == null) return NotFound("Article introuvable.");
+
+        if (files == null || files.Count == 0) return BadRequest("Aucun fichier reçu.");
+
+        var uploadsPath = UploadStorage.EquipmentImagesDirectory;
+        bool isFirstPhoto = !existing.Photos.Any();
+
+        foreach (var file in files)
+        {
+            if (file.Length > 0)
+            {
+                var fileName = UploadStorage.BuildSafeStoredFileName(file.FileName);
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                existing.Photos.Add(new Photo
+                {
+                    EquipmentId = id,
+                    Url = UploadStorage.BuildEquipmentImageUrl(fileName),
+                    IsPrimary = isFirstPhoto
+                });
+                
+                isFirstPhoto = false;
+            }
+        }
+
+        await _equipmentRepository.UpdateAsync(existing);
+        
+        var readDto = _mapper.Map<EquipmentReadDto>(existing);
+        return Ok(readDto);
+    }
+
+    /// <summary>
+    /// Delete an image.
+    /// </summary>
+    [HttpDelete("{id}/images/{photoId}")]
+    public async Task<IActionResult> DeleteImage(int id, int photoId)
+    {
+        var existing = await _equipmentRepository.GetByIdAsync(id);
+        if (existing == null) return NotFound("Article introuvable.");
+
+        var photo = existing.Photos.FirstOrDefault(p => p.Id == photoId);
+        if (photo == null) return NotFound("Image introuvable.");
+
+        var physicalPath = UploadStorage.BuildEquipmentImagePhysicalPath(photo.Url);
+        if (System.IO.File.Exists(physicalPath))
+        {
+            System.IO.File.Delete(physicalPath);
+        }
+
+        existing.Photos.Remove(photo);
+        
+        if (photo.IsPrimary && existing.Photos.Any())
+        {
+            existing.Photos.First().IsPrimary = true;
+        }
+
+        await _equipmentRepository.UpdateAsync(existing);
+        var readDto = _mapper.Map<EquipmentReadDto>(existing);
+        return Ok(readDto);
+    }
+
+    /// <summary>
+    /// Set an image as primary.
+    /// </summary>
+    [HttpPut("{id}/images/{photoId}/primary")]
+    public async Task<IActionResult> SetPrimaryImage(int id, int photoId)
+    {
+        var existing = await _equipmentRepository.GetByIdAsync(id);
+        if (existing == null) return NotFound("Article introuvable.");
+
+        var photo = existing.Photos.FirstOrDefault(p => p.Id == photoId);
+        if (photo == null) return NotFound("Image introuvable.");
+
+        foreach (var p in existing.Photos)
+        {
+            p.IsPrimary = (p.Id == photoId);
+        }
+
+        await _equipmentRepository.UpdateAsync(existing);
+        var readDto = _mapper.Map<EquipmentReadDto>(existing);
+        return Ok(readDto);
     }
 }

@@ -25,6 +25,12 @@ public class StockController : ControllerBase
         _mapper = mapper;
     }
 
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+    }
+
     /// <summary>
     /// Record a stock entry (restock).
     /// Used by WPF Back-office.
@@ -32,14 +38,17 @@ public class StockController : ControllerBase
     [HttpPost("entry")]
     public async Task<ActionResult<StockMovementReadDto>> RecordEntry(StockMovementCreateDto request)
     {
-        // For now, userId is hardcoded to 1 (Admin) until Auth is implemented
+        var userId = GetCurrentUserId();
         var movement = await _stockService.RecordEntryAsync(
             request.EquipmentId, 
             request.Quantity, 
-            userId: 1, 
+            userId, 
+            depotId: request.DepotId,
             remarks: request.Comment);
 
-        return Ok(_mapper.Map<StockMovementReadDto>(movement));
+        // Re-fetch to include relations for the DTO
+        var created = await _movementRepository.GetByIdAsync(movement.Id);
+        return Ok(_mapper.Map<StockMovementReadDto>(created));
     }
 
     /// <summary>
@@ -49,20 +58,16 @@ public class StockController : ControllerBase
     [HttpPost("exit")]
     public async Task<ActionResult<StockMovementReadDto>> RecordExit(StockMovementCreateDto request)
     {
-        try
-        {
-            var movement = await _stockService.RecordExitAsync(
-                request.EquipmentId, 
-                request.Quantity, 
-                userId: 1, 
-                remarks: request.Comment);
+        var userId = GetCurrentUserId();
+        var movement = await _stockService.RecordExitAsync(
+            request.EquipmentId,
+            request.Quantity,
+            userId,
+            depotId: request.DepotId,
+            remarks: request.Comment);
 
-            return Ok(_mapper.Map<StockMovementReadDto>(movement));
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { Error = ex.Message });
-        }
+        var created = await _movementRepository.GetByIdAsync(movement.Id);
+        return Ok(_mapper.Map<StockMovementReadDto>(created));
     }
 
     /// <summary>
@@ -117,5 +122,34 @@ public class StockController : ControllerBase
         var dtos = _mapper.Map<IEnumerable<StockMovementReadDto>>(entities);
 
         return Ok(new PagedResultDto<StockMovementReadDto>(dtos, totalCount, page, pageSize));
+    }
+
+    /// <summary>
+    /// Update an existing movement (Quantity or Comment).
+    /// Only Admins can modify history.
+    /// </summary>
+    [HttpPut("{id}")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> UpdateMovement(int id, [FromBody] StockMovementCreateDto request)
+    {
+        await _stockService.UpdateMovementAsync(
+            id,
+            request.EquipmentId,
+            request.Type,
+            request.Quantity,
+            request.Comment);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Delete an existing movement.
+    /// Only Admins can delete history.
+    /// </summary>
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> DeleteMovement(int id)
+    {
+        await _stockService.DeleteMovementAsync(id);
+        return NoContent();
     }
 }

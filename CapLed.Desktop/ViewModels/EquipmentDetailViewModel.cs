@@ -61,6 +61,37 @@ public class EquipmentDetailViewModel : BaseViewModel
         get => _quantity;
         set => SetProperty(ref _quantity, value);
     }
+    
+    private bool _visibleSite;
+    public bool VisibleSite
+    {
+        get => _visibleSite;
+        set => SetProperty(ref _visibleSite, value);
+    }
+
+    private bool _isPublished;
+    public bool IsPublished
+    {
+        get => _isPublished;
+        set => SetProperty(ref _isPublished, value);
+    }
+
+    private decimal? _prixVente;
+    public decimal? PrixVente
+    {
+        get => _prixVente;
+        set => SetProperty(ref _prixVente, value);
+    }
+
+    private ArticleEtatDetailModel _etatDetail = new();
+    public ArticleEtatDetailModel EtatDetail
+    {
+        get => _etatDetail;
+        set => SetProperty(ref _etatDetail, value);
+    }
+
+    public ObservableCollection<ArticleChampValeurModel> ChampsSpecifiques { get; } = new();
+    public ObservableCollection<PhotoModel> Photos { get; } = new();
 
     private CategoryModel? _selectedCategory;
     public CategoryModel? SelectedCategory
@@ -70,21 +101,17 @@ public class EquipmentDetailViewModel : BaseViewModel
     }
 
     public ObservableCollection<CategoryModel> Categories { get; } = new();
-    public List<string> ConditionOptions { get; } = new() { "NEW", "USED", "DAMAGED", "REPAIRING" };
-
-    // ─── State ───────────────────────────────────────────────────────────────
-    private bool _isSaving;
-    public bool IsSaving
-    {
-        get => _isSaving;
-        private set => SetProperty(ref _isSaving, value);
-    }
+    public List<string> ConditionOptions { get; } = new() { "NEUF", "OCCASION", "RECONDITIONNE" };
 
     public string Title => IsEditMode ? "Modifier l'Équipement" : "Nouvel Équipement";
 
     // ─── Commands ────────────────────────────────────────────────────────────
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
+
+    public ICommand UploadImagesCommand { get; }
+    public ICommand DeleteImageCommand { get; }
+    public ICommand SetPrimaryImageCommand { get; }
 
     // ─── Navigation Support ───────────────────────────────────────────────────
     public Func<bool, Task>? NavigateToListRequested { get; set; }
@@ -98,6 +125,10 @@ public class EquipmentDetailViewModel : BaseViewModel
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
         CancelCommand = new AsyncRelayCommand(CancelAsync);
+
+        UploadImagesCommand = new AsyncRelayCommand(UploadImagesActionAsync, () => IsEditMode && !IsSaving);
+        DeleteImageCommand = new AsyncRelayCommand(DeleteImageActionAsync, (_) => !IsSaving);
+        SetPrimaryImageCommand = new AsyncRelayCommand(SetPrimaryImageActionAsync, (_) => !IsSaving);
     }
 
     /// <summary>
@@ -105,9 +136,7 @@ public class EquipmentDetailViewModel : BaseViewModel
     /// </summary>
     public async Task LoadAsync(int? id = null)
     {
-        IsLoading = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        BeginOperation();
         Id = id;
         IsEditMode = id.HasValue;
 
@@ -124,9 +153,30 @@ public class EquipmentDetailViewModel : BaseViewModel
                     Name = equipment.Name;
                     Reference = equipment.Reference;
                     Description = equipment.Description ?? string.Empty;
-                    SelectedCondition = equipment.Condition;
+                    
+                    // Case-insensitive match for the condition string from API
+                    var match = ConditionOptions.FirstOrDefault(o => o.Equals(equipment.Condition, StringComparison.OrdinalIgnoreCase));
+                    SelectedCondition = match ?? "NEUF";
+
                     Quantity = equipment.Quantity;
+                    VisibleSite = equipment.VisibleSite;
+                    IsPublished = equipment.IsPublished;
+                    PrixVente = equipment.PrixVente;
+                    EtatDetail = equipment.EtatDetail ?? new ArticleEtatDetailModel();
                     SelectedCategory = Categories.FirstOrDefault(c => c.Id == equipment.CategoryId);
+
+                    ChampsSpecifiques.Clear();
+                    if (equipment.ChampsSpecifiques != null)
+                    {
+                        foreach(var champ in equipment.ChampsSpecifiques)
+                            ChampsSpecifiques.Add(champ);
+                    }
+
+                    Photos.Clear();
+                    if (equipment.Photos != null)
+                    {
+                        foreach(var p in equipment.Photos) Photos.Add(p);
+                    }
                 }
                 else
                 {
@@ -139,8 +189,13 @@ public class EquipmentDetailViewModel : BaseViewModel
                 Name = string.Empty;
                 Reference = string.Empty;
                 Description = string.Empty;
-                SelectedCondition = "NEW";
+                SelectedCondition = "NEUF";
                 Quantity = 0;
+                VisibleSite = false;
+                IsPublished = false;
+                PrixVente = null;
+                EtatDetail = new ArticleEtatDetailModel();
+                ChampsSpecifiques.Clear();
                 SelectedCategory = null;
             }
         }
@@ -150,7 +205,7 @@ public class EquipmentDetailViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -165,8 +220,7 @@ public class EquipmentDetailViewModel : BaseViewModel
     {
         if (!Validate()) return;
 
-        IsSaving = true;
-        ErrorMessage = null;
+        BeginSave();
 
         try
         {
@@ -176,7 +230,13 @@ public class EquipmentDetailViewModel : BaseViewModel
                 Reference = Reference,
                 Description = Description,
                 Condition = SelectedCondition,
-                CategoryId = SelectedCategory!.Id
+                CategoryId = SelectedCategory!.Id,
+                VisibleSite = VisibleSite,
+                IsPublished = IsPublished,
+                PrixVente = PrixVente,
+                MinThreshold = 2, // Default or add a field
+                EtatDetail = EtatDetail,
+                ChampsSpecifiques = ChampsSpecifiques.ToList()
             };
 
             bool success;
@@ -202,7 +262,7 @@ public class EquipmentDetailViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
     }
 
@@ -234,5 +294,96 @@ public class EquipmentDetailViewModel : BaseViewModel
     private async Task CancelAsync()
     {
         if (NavigateToListRequested != null) await NavigateToListRequested.Invoke(false);
+    }
+
+    // ─── Image Management ───────────────────────────────────────────────────
+
+    private async Task UploadImagesActionAsync()
+    {
+        if (!Id.HasValue) return;
+
+        var openFileDialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Multiselect = true,
+            Filter = "Images (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp",
+            Title = "Sélectionner des images"
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            BeginSave();
+            try
+            {
+                var updatedEquipment = await _equipmentService.UploadImagesAsync(Id.Value, openFileDialog.FileNames);
+                RefreshPhotos(updatedEquipment.Photos);
+                SuccessMessage = "Images téléversées avec succès.";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Erreur lors de l'upload : " + ex.Message;
+            }
+            finally
+            {
+                EndSave();
+            }
+        }
+    }
+
+    private async Task DeleteImageActionAsync(object? parameter)
+    {
+        if (!Id.HasValue || parameter is not int photoId) return;
+        
+        BeginSave();
+        try
+        {
+            var success = await _equipmentService.DeleteImageAsync(Id.Value, photoId);
+            if (success)
+            {
+                var photoToRemove = Photos.FirstOrDefault(p => p.Id == photoId);
+                if (photoToRemove != null) Photos.Remove(photoToRemove);
+                SuccessMessage = "Image supprimée.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Erreur de suppression : " + ex.Message;
+        }
+        finally
+        {
+            EndSave();
+        }
+    }
+
+    private async Task SetPrimaryImageActionAsync(object? parameter)
+    {
+        if (!Id.HasValue || parameter is not int photoId) return;
+        
+        BeginSave();
+        try
+        {
+            var success = await _equipmentService.SetPrimaryImageAsync(Id.Value, photoId);
+            if (success)
+            {
+                foreach(var p in Photos) p.IsPrimary = (p.Id == photoId);
+                SuccessMessage = "Image principale mise à jour.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Erreur : " + ex.Message;
+        }
+        finally
+        {
+            EndSave();
+        }
+    }
+
+    private void RefreshPhotos(IEnumerable<PhotoModel>? updatedPhotos)
+    {
+        Photos.Clear();
+        if (updatedPhotos != null)
+        {
+            foreach (var p in updatedPhotos) Photos.Add(p);
+        }
     }
 }

@@ -21,13 +21,6 @@ public class AlertsViewModel : BaseViewModel
         set => SetProperty(ref _selectedAlert, value);
     }
 
-    private bool _isSaving;
-    public bool IsSaving
-    {
-        get => _isSaving;
-        set => SetProperty(ref _isSaving, value);
-    }
-
     public ICommand RefreshCommand { get; }
     public ICommand AcknowledgeCommand { get; }
 
@@ -46,8 +39,7 @@ public class AlertsViewModel : BaseViewModel
 
     private async Task LoadAlertsAsync()
     {
-        IsLoading = true;
-        ErrorMessage = null;
+        BeginOperation();
         try
         {
             var result = await _alertService.GetLowStockAlertsAsync();
@@ -63,7 +55,7 @@ public class AlertsViewModel : BaseViewModel
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -71,9 +63,7 @@ public class AlertsViewModel : BaseViewModel
     {
         if (SelectedAlert == null) return;
 
-        IsSaving = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        BeginSave();
 
         try
         {
@@ -91,7 +81,7 @@ public class AlertsViewModel : BaseViewModel
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
     }
 }

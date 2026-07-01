@@ -37,14 +37,22 @@ public abstract class BaseViewModel : INotifyPropertyChanged
     // ── Loading / Error state (shared across all ViewModels) ──────────────────
 
     private bool _isLoading;
+    private bool _isSaving;
     private string? _errorMessage;
     private string? _successMessage;
 
-    /// <summary>True while an async operation is in progress.</summary>
+    /// <summary>True while an async operation (fetch) is in progress.</summary>
     public bool IsLoading
     {
         get => _isLoading;
         set => SetProperty(ref _isLoading, value);
+    }
+
+    /// <summary>True while an async operation (create/update/delete) is in progress.</summary>
+    public bool IsSaving
+    {
+        get => _isSaving;
+        set => SetProperty(ref _isSaving, value);
     }
 
     /// <summary>Non-null when an error has occurred.</summary>
@@ -74,4 +82,17 @@ public abstract class BaseViewModel : INotifyPropertyChanged
 
     /// <summary>Helper: set loading = false.</summary>
     protected void EndOperation() => IsLoading = false;
+
+    /// <summary>
+    /// Helper: clear error + success, set saving = true.
+    /// </summary>
+    protected void BeginSave()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        IsSaving = true;
+    }
+
+    /// <summary>Helper: set saving = false.</summary>
+    protected void EndSave() => IsSaving = false;
 }

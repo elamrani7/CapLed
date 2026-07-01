@@ -10,10 +10,34 @@ public class StockMovementViewModel : BaseViewModel
 {
     private readonly StockService _stockService;
     private readonly EquipmentService _equipmentService;
+    private readonly CategoryService _categoryService;
+    private readonly IConfirmationService _confirmationService;
+    private readonly CapLed.Desktop.Core.AppSession _session;
+
+    public bool IsAdmin => _session.IsAdmin;
+
+    // ─── Mode & Selection ────────────────────────────────────────────────────
+    private bool _isEditMode;
+    public bool IsEditMode
+    {
+        get => _isEditMode;
+        set => SetProperty(ref _isEditMode, value);
+    }
+
+    private StockMovementModel? _selectedMovement;
+    public StockMovementModel? SelectedMovement
+    {
+        get => _selectedMovement;
+        set => SetProperty(ref _selectedMovement, value);
+    }
+
+    public string FormTitle => IsEditMode ? "Modifier le Mouvement" : "Nouveau Mouvement";
+    public string SubmitButtonText => IsEditMode ? "Enregistrer les modifications" : "Valider le mouvement";
 
     // ─── Collections ─────────────────────────────────────────────────────────
     public ObservableCollection<StockMovementModel> Movements { get; } = new();
     public ObservableCollection<EquipmentListItemModel> EquipmentChoices { get; } = new();
+    public ObservableCollection<DepotModel> Depots { get; } = new();
 
     // ─── Filters ─────────────────────────────────────────────────────────────
     private EquipmentListItemModel? _selectedFilterEquipment;
@@ -44,12 +68,74 @@ public class StockMovementViewModel : BaseViewModel
         set => SetProperty(ref _filterDateTo, value);
     }
 
+    // ─── Mode Management (LOT/SERIALISE) ─────────────────────────────────────
+    private bool _isQuantiteMode = true;
+    public bool IsQuantiteMode { get => _isQuantiteMode; set => SetProperty(ref _isQuantiteMode, value); }
+
+    private bool _isLotMode;
+    public bool IsLotMode { get => _isLotMode; set => SetProperty(ref _isLotMode, value); }
+
+    private bool _isSerialMode;
+    public bool IsSerialMode { get => _isSerialMode; set => SetProperty(ref _isSerialMode, value); }
+
+    private string? _numeroLot;
+    public string? NumeroLot { get => _numeroLot; set => SetProperty(ref _numeroLot, value); }
+
+    public ObservableCollection<SerialNumberEntry> NumeroSeries { get; } = new();
+
     // ─── New Movement Form ────────────────────────────────────────────────────
     private EquipmentListItemModel? _selectedEquipmentForNew;
     public EquipmentListItemModel? SelectedEquipmentForNew
     {
         get => _selectedEquipmentForNew;
-        set => SetProperty(ref _selectedEquipmentForNew, value);
+        set 
+        {
+            if (SetProperty(ref _selectedEquipmentForNew, value))
+            {
+                _ = UpdateManagementModeAsync(value);
+            }
+        }
+    }
+
+    private async Task UpdateManagementModeAsync(EquipmentListItemModel? equipment)
+    {
+        IsQuantiteMode = true;
+        IsLotMode = false;
+        IsSerialMode = false;
+        NumeroLot = string.Empty;
+        NumeroSeries.Clear();
+
+        if (equipment != null && !string.IsNullOrWhiteSpace(equipment.CategoryName))
+        {
+            try
+            {
+                // DIAGNOSIS FIX: The backend legacy API for EquipmentDetail does NOT expose CategoryId.
+                // We bypass this entirely by fetching all known categories and cross-matching by Label.
+                var catsResult = await _categoryService.GetAllAsync();
+                var cat = catsResult.FirstOrDefault(c => c.Label == equipment.CategoryName);
+
+                if (cat != null)
+                {
+                    IsLotMode = cat.TypeGestionStock == "LOT";
+                    IsSerialMode = cat.TypeGestionStock == "SERIALISE";
+                    IsQuantiteMode = cat.TypeGestionStock == "QUANTITE" || string.IsNullOrEmpty(cat.TypeGestionStock);
+                        
+                    if (IsSerialMode) SyncSerialEntries(MovementQuantity);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Impossible de déterminer le mode de gestion de stock pour cet article.";
+                System.Diagnostics.Debug.WriteLine($"[StockMode] {ex.Message}");
+            }
+        }
+    }
+
+    private void SyncSerialEntries(int targetCount)
+    {
+        if (targetCount < 1) targetCount = 1;
+        while (NumeroSeries.Count < targetCount) NumeroSeries.Add(new SerialNumberEntry());
+        while (NumeroSeries.Count > targetCount) NumeroSeries.RemoveAt(NumeroSeries.Count - 1);
     }
 
     private string _newMovementType = "ENTRY";
@@ -63,7 +149,13 @@ public class StockMovementViewModel : BaseViewModel
     public int MovementQuantity
     {
         get => _movementQuantity;
-        set => SetProperty(ref _movementQuantity, value);
+        set 
+        {
+            if (SetProperty(ref _movementQuantity, value))
+            {
+                if (IsSerialMode) SyncSerialEntries(value);
+            }
+        }
     }
 
     private DateTime _movementDate = DateTime.Now;
@@ -80,14 +172,13 @@ public class StockMovementViewModel : BaseViewModel
         set => SetProperty(ref _movementComment, value);
     }
 
-    private bool _isSaving;
-    public bool IsSaving
+    private DepotModel? _selectedDepot;
+    public DepotModel? SelectedDepot
     {
-        get => _isSaving;
-        set => SetProperty(ref _isSaving, value);
+        get => _selectedDepot;
+        set => SetProperty(ref _selectedDepot, value);
     }
 
-    // ─── Paging ──────────────────────────────────────────────────────────────
     private int _page = 1;
     public int Page
     {
@@ -121,15 +212,25 @@ public class StockMovementViewModel : BaseViewModel
     public ICommand RegisterMovementCommand { get; }
     public ICommand PreviousPageCommand { get; }
     public ICommand NextPageCommand { get; }
+    public ICommand CancelEditCommand { get; }
+    public ICommand DeleteMovementCommand { get; }
+    public ICommand EditMovementCommand { get; }
 
-    public StockMovementViewModel(StockService stockService, EquipmentService equipmentService)
+    public StockMovementViewModel(StockService stockService, EquipmentService equipmentService, CategoryService categoryService, IConfirmationService confirmationService)
     {
         _stockService = stockService;
         _equipmentService = equipmentService;
+        _categoryService = categoryService;
+        _confirmationService = confirmationService;
+        _session = CapLed.Desktop.Core.AppSession.Current;
 
         RefreshCommand = new AsyncRelayCommand(async () => { Page = 1; await LoadHistoryAsync(); });
         ClearFiltersCommand = new AsyncRelayCommand(ClearFiltersAsync);
         RegisterMovementCommand = new AsyncRelayCommand(RegisterMovementAsync, () => !IsSaving);
+        CancelEditCommand = new RelayCommand(ResetForm);
+        
+        EditMovementCommand = new RelayCommand(p => PrepareEdit((StockMovementModel)p!));
+        DeleteMovementCommand = new AsyncRelayCommand(async (param) => await DeleteMovementAsync(param as StockMovementModel), _ => IsAdmin);
         
         PreviousPageCommand = new AsyncRelayCommand(async () => { if (Page > 1) { Page--; await LoadHistoryAsync(); } });
         NextPageCommand = new AsyncRelayCommand(async () => { if (Page < TotalPages) { Page++; await LoadHistoryAsync(); } });
@@ -137,8 +238,17 @@ public class StockMovementViewModel : BaseViewModel
 
     public async Task InitializeAsync()
     {
+        InitializeDepots();
         await LoadEquipmentChoicesAsync();
         await LoadHistoryAsync();
+    }
+
+    private void InitializeDepots()
+    {
+        Depots.Clear();
+        Depots.Add(new DepotModel { Id = 1, Nom = "Casablanca" });
+        Depots.Add(new DepotModel { Id = 2, Nom = "Tanger" });
+        SelectedDepot = Depots.FirstOrDefault();
     }
 
     private async Task LoadEquipmentChoicesAsync()
@@ -149,16 +259,19 @@ public class StockMovementViewModel : BaseViewModel
             EquipmentChoices.Clear();
             foreach (var e in equipments.Items) EquipmentChoices.Add(e);
         }
-        catch (Exception ex)
+        catch (ApiException ex)
         {
-            ErrorMessage = "Erreur chargement équipements: " + ex.Message;
+            ErrorMessage = ex.Message; // Already a business message from the API
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Impossible de charger la liste des articles. Vérifiez votre connexion.";  
         }
     }
 
     private async Task LoadHistoryAsync()
     {
-        IsLoading = true;
-        ErrorMessage = null;
+        BeginOperation();
         try
         {
             var filter = new StockMovementFilter
@@ -176,13 +289,17 @@ public class StockMovementViewModel : BaseViewModel
             foreach (var m in result.Items) Movements.Add(m);
             TotalCount = result.TotalCount;
         }
-        catch (Exception ex)
+        catch (ApiException ex)
         {
-            ErrorMessage = "Erreur lors du chargement de l'historique : " + ex.Message;
+            ErrorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Impossible de charger l'historique des mouvements. Vérifiez votre connexion.";
         }
         finally
         {
-            IsLoading = false;
+            EndOperation();
         }
     }
 
@@ -196,11 +313,48 @@ public class StockMovementViewModel : BaseViewModel
         await LoadHistoryAsync();
     }
 
+    private void PrepareEdit(StockMovementModel movement)
+    {
+        IsEditMode = true;
+        SelectedMovement = movement; // FIX: Ensure ID is tracked for the PUT request
+        OnPropertyChanged(nameof(FormTitle));
+        OnPropertyChanged(nameof(SubmitButtonText));
+
+        SelectedEquipmentForNew = EquipmentChoices.FirstOrDefault(e => e.Id == movement.EquipmentId);
+        MovementQuantity = movement.Quantity;
+        NewMovementType = movement.Type;
+        MovementDate = movement.Date;
+        MovementComment = movement.Comment;
+    }
+
+    private void ResetForm()
+    {
+        IsEditMode = false;
+        SelectedMovement = null;
+        OnPropertyChanged(nameof(FormTitle));
+        OnPropertyChanged(nameof(SubmitButtonText));
+
+        SelectedEquipmentForNew = null;
+        MovementQuantity = 1;
+        MovementDate = DateTime.Now;
+        MovementComment = string.Empty;
+        NumeroLot = string.Empty;
+        NumeroSeries.Clear();
+        ErrorMessage = null;
+        SuccessMessage = null;
+    }
+
     private async Task RegisterMovementAsync()
     {
         if (SelectedEquipmentForNew == null)
         {
             ErrorMessage = "Veuillez sélectionner un équipement.";
+            return;
+        }
+
+        if (SelectedDepot == null)
+        {
+            ErrorMessage = "Veuillez sélectionner un dépôt.";
             return;
         }
 
@@ -210,44 +364,124 @@ public class StockMovementViewModel : BaseViewModel
             return;
         }
 
-        IsSaving = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        if (IsLotMode && string.IsNullOrWhiteSpace(NumeroLot))
+        {
+            ErrorMessage = "Le numéro de lot est obligatoire pour cet équipement.";
+            return;
+        }
+
+        if (IsSerialMode)
+        {
+            if (NumeroSeries.Any(s => string.IsNullOrWhiteSpace(s.Value)))
+            {
+                ErrorMessage = "Tous les numéros de série doivent être renseignés.";
+                return;
+            }
+            if (NumeroSeries.Select(s => s.Value).Distinct().Count() != NumeroSeries.Count)
+            {
+                ErrorMessage = "Les numéros de série contiennent des doublons.";
+                return;
+            }
+        }
+
+        BeginSave();
 
         try
         {
             var model = new StockMovementCreateModel
             {
-                EquipmentId = SelectedEquipmentForNew.Id,
-                Quantity = MovementQuantity,
-                Type = NewMovementType,
-                Date = MovementDate,
-                Comment = MovementComment
+                ArticleId = SelectedEquipmentForNew.Id,
+                Quantite = MovementQuantity,
+                // TypeMouvement will be overridden by RecordEntryAsync/RecordExitAsync
+                DateEntreeLot = MovementDate,
+                Remarks = MovementComment,
+                NumeroLot = IsLotMode ? NumeroLot : null,
+                NumeroSeries = IsSerialMode ? NumeroSeries.Select(s => s.Value).ToList() : null,
+                DepotSourceId = NewMovementType == "EXIT" ? SelectedDepot?.Id : null,
+                DepotDestinationId = NewMovementType == "ENTRY" ? SelectedDepot?.Id : null
             };
 
-            StockMovementModel? result;
-            if (NewMovementType == "ENTRY")
-                result = await _stockService.RecordEntryAsync(model);
-            else
-                result = await _stockService.RecordExitAsync(model);
-
-            if (result != null)
+            if (IsEditMode && SelectedMovement != null)
             {
-                SuccessMessage = "Mouvement enregistré avec succès.";
-                // Reset form
-                MovementComment = string.Empty;
-                MovementQuantity = 1;
-                // Refresh list
-                await LoadHistoryAsync();
+                // Ensure we are calling the PUT method
+                var success = await _stockService.UpdateAsync(SelectedMovement.Id, model);
+                if (success) 
+                {
+                    SuccessMessage = "Mouvement modifié avec succès.";
+                    await LoadHistoryAsync();
+                    ResetForm();
+                }
             }
+            else
+            {
+                bool success;
+                if (NewMovementType == "ENTRY")
+                    success = await _stockService.RecordEntryAsync(model);
+                else
+                    success = await _stockService.RecordExitAsync(model);
+
+                if (success)
+                {
+                    SuccessMessage = "Mouvement enregistré avec succès.";
+                    ResetForm();
+                    await LoadHistoryAsync();
+                }
+            }
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Message; // Business message from the API (e.g. STOCK_INSUFFICIENT)
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Erreur lors de l'enregistrement : " + ex.Message;
+            ErrorMessage = $"Une erreur interne est survenue. Veuillez contacter l'administrateur. ({ex.Message})";  
         }
         finally
         {
-            IsSaving = false;
+            EndSave();
         }
+    }
+
+    private async Task DeleteMovementAsync(StockMovementModel? movement)
+    {
+        if (movement == null) return;
+
+        if (_confirmationService.Confirm("Confirmation de suppression", 
+            $"Voulez-vous vraiment supprimer ce mouvement de {movement.Quantity} {movement.EquipmentName} ?\nCela impactera le stock actuel."))
+        {
+            BeginOperation();
+            try
+            {
+                var success = await _stockService.DeleteAsync(movement.Id);
+                if (success)
+                {
+                    SuccessMessage = "Mouvement supprimé.";
+                    await LoadHistoryAsync();
+                    if (SelectedMovement?.Id == movement.Id) ResetForm();
+                }
+            }
+            catch (ApiException ex)
+            {
+                ErrorMessage = ex.Message;
+            }
+            catch (Exception)
+            {
+                ErrorMessage = "La suppression du mouvement a échoué. Veuillez réessayer.";  
+            }
+            finally
+            {
+                EndOperation();
+            }
+        }
+    }
+}
+
+public class SerialNumberEntry : BaseViewModel
+{
+    private string _value = string.Empty;
+    public string Value 
+    { 
+        get => _value; 
+        set => SetProperty(ref _value, value); 
     }
 }

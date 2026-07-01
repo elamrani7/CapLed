@@ -22,3 +22,25 @@
 *.tmp
 *.temp
 *.log
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+
+# Release/build artifacts
+*.exe
+*.pdb
+*.zip
+CapLed_Release/
+coverage-report/
+TestResults/
+
+# Local credentials / session files
+token.txt
+login.json
+*.local.json
+
+# Analytics generated outputs
+analytics/exports/*
+!analytics/exports/.gitkeep
+analytics/exports_*/
