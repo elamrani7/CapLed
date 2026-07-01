@@ -2,7 +2,7 @@ name: Code Quality - SonarQube Cloud
 
 on:
   push:
-    branches: [ "stable-version" ]
+    branches: [ "main" ]
     paths:
       - "CapLed.API/**"
       - "CapLed.Core/**"
