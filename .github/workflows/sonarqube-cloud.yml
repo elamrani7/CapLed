@@ -1,6 +1,15 @@
 name: Code Quality - SonarQube Cloud
 
 on:
+  push:
+    branches: [ "stable-version" ]
+    paths:
+      - "CapLed.API/**"
+      - "CapLed.Core/**"
+      - "CapLed.Infrastructure/**"
+      - "CapLed.Tests.Unit/**"
+      - "CapLed.Tests.Integration/**"
+      - ".github/workflows/sonarqube-cloud.yml"
   workflow_dispatch:
 
 jobs:
