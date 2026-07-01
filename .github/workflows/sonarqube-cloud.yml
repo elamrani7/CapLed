@@ -1,0 +1,80 @@
+name: Code Quality - SonarQube Cloud
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sonarcloud-dotnet:
+    name: SonarQube Cloud Analysis
+    runs-on: windows-latest
+
+    env:
+      SONAR_PROJECT_KEY: elamrani7_CapLed
+      SONAR_ORGANIZATION: elamrani7
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~\sonar\cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Start SonarQube analysis
+        run: >
+          dotnet sonarscanner begin
+          /k:"${{ env.SONAR_PROJECT_KEY }}"
+          /o:"${{ env.SONAR_ORGANIZATION }}"
+          /d:sonar.token="${{ env.SONAR_TOKEN }}"
+          /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml"
+          /d:sonar.exclusions="**/bin/**,**/obj/**,**/dist/**,**/node_modules/**,**/coverage-report/**,**/analytics/exports/**,**/*_wpftmp.csproj"
+
+      - name: Restore solution
+        run: dotnet restore CapLed.sln
+
+      - name: Build solution
+        run: dotnet build CapLed.sln --configuration Release --no-restore
+
+      - name: Run unit tests with coverage
+        run: >
+          dotnet test CapLed.Tests.Unit/CapLed.Tests.Unit.csproj
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+          --
+          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Run integration tests with coverage
+        run: >
+          dotnet test CapLed.Tests.Integration/CapLed.Tests.Integration.csproj
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+          --
+          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: End SonarQube analysis
+        run: dotnet sonarscanner end /d:sonar.token="${{ env.SONAR_TOKEN }}"
